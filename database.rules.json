@@ -11,11 +11,9 @@
     },
     "orders": {
       ".read": true,
-      ".indexOn": ["orderNumber", "customer/phone", "createdAt"],
-      "$orderId": {
-        ".write": true,
-        ".validate": "newData.hasChildren(['id', 'orderNumber', 'customer', 'items', 'total', 'status']) && newData.child('total').isNumber() && newData.child('orderNumber').isString()"
-      }
+      ".write": true,
+      ".indexOn": ["orderNumber", "customer/phone", "createdAt"]
     }
   }
 }
+
