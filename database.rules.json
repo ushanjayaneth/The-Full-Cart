@@ -1,0 +1,19 @@
+{
+  "rules": {
+    "products": {
+      ".read": true,
+      ".write": true
+    },
+    "settings": {
+      ".read": true,
+      ".write": true
+    },
+    "orders": {
+      ".read": true,
+      "$orderId": {
+        ".write": true,
+        ".validate": "newData.hasChildren(['id', 'orderNumber', 'customer', 'items', 'total'])"
+      }
+    }
+  }
+}

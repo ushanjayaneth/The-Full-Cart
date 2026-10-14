@@ -92,13 +92,15 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     }
   });
 
-  // Load orders
+  // Load orders (filtering out any old demo orders)
   const [orders, setOrders] = useState<Order[]>(() => {
     try {
       const saved = localStorage.getItem(STORAGE_KEYS.ORDERS);
-      return saved ? JSON.parse(saved) : INITIAL_ORDERS;
+      if (!saved) return [];
+      const parsed: Order[] = JSON.parse(saved);
+      return parsed.filter((o) => !o.id.startsWith('ord-100'));
     } catch {
-      return INITIAL_ORDERS;
+      return [];
     }
   });
 
@@ -106,7 +108,12 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const [settings, setSettings] = useState<StoreSettings>(() => {
     try {
       const saved = localStorage.getItem(STORAGE_KEYS.SETTINGS);
-      return saved ? { ...INITIAL_SETTINGS, ...JSON.parse(saved) } : INITIAL_SETTINGS;
+      const parsed = saved ? JSON.parse(saved) : {};
+      const merged = { ...INITIAL_SETTINGS, ...parsed };
+      if (!merged.whatsappNumber || merged.whatsappNumber === '94771234567') {
+        merged.whatsappNumber = '94776338514';
+      }
+      return merged;
     } catch {
       return INITIAL_SETTINGS;
     }

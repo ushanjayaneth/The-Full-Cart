@@ -27,7 +27,10 @@ import {
   ExternalLink,
   Sparkles,
   CheckCircle2,
+  Lock,
+  ShieldCheck,
 } from 'lucide-react';
+import { getDatabaseUrl } from '../../services/firebase';
 
 interface AdminDashboardProps {
   onLogout?: () => void;
@@ -229,6 +232,39 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
       alert('Firebase Sync failed: ' + ((err as Error)?.message || 'Check credentials'));
     } finally {
       setIsSeeding(false);
+    }
+  };
+
+  const [adminPasswordInput, setAdminPasswordInput] = useState('');
+  const [adminPasswordNotice, setAdminPasswordNotice] = useState(false);
+  const [clearOrdersNotice, setClearOrdersNotice] = useState(false);
+
+  const handleChangeAdminPassword = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (adminPasswordInput.trim().length < 6) {
+      alert('Password must be at least 6 characters long.');
+      return;
+    }
+    localStorage.setItem('the_full_cart_admin_custom_password', adminPasswordInput.trim());
+    setAdminPasswordNotice(true);
+    setAdminPasswordInput('');
+    setTimeout(() => setAdminPasswordNotice(false), 3000);
+  };
+
+  const handleClearAllOrders = async () => {
+    if (!confirm('Are you sure you want to clear ALL orders? This will delete all demo and existing orders from the database.')) {
+      return;
+    }
+    try {
+      const dbUrl = getDatabaseUrl();
+      await fetch(`${dbUrl}/orders.json`, { method: 'DELETE' });
+      localStorage.removeItem('the_full_cart_orders_v1');
+      setClearOrdersNotice(true);
+      setTimeout(() => {
+        window.location.reload();
+      }, 1200);
+    } catch (err: unknown) {
+      alert('Failed to clear orders: ' + ((err as Error)?.message || 'Check database connection'));
     }
   };
 
@@ -1390,6 +1426,75 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
             </div>
 
           </form>
+
+          {/* Admin Security & Password Change */}
+          <div style={{
+            marginTop: '28px',
+            paddingTop: '24px',
+            borderTop: '1px solid var(--border-subtle)',
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
+              <Lock size={18} style={{ color: '#f59e0b' }} />
+              <h4 style={{ fontSize: '1.05rem', fontWeight: 800 }}>Admin Portal Security & Password</h4>
+            </div>
+            <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '16px' }}>
+              Change the password required to access this Admin Management Portal.
+            </p>
+
+            <form onSubmit={handleChangeAdminPassword} style={{ display: 'flex', gap: '10px', alignItems: 'center', maxWidth: '480px' }}>
+              <input
+                type="text"
+                required
+                placeholder="Enter new admin password (min 6 chars)..."
+                value={adminPasswordInput}
+                onChange={(e) => setAdminPasswordInput(e.target.value)}
+                className="form-input"
+                style={{ flex: 1, padding: '9px 12px', fontSize: '0.85rem' }}
+              />
+              <button type="submit" className="btn-secondary" style={{ whiteSpace: 'nowrap', padding: '9px 16px' }}>
+                <ShieldCheck size={16} />
+                <span>Update Password</span>
+              </button>
+            </form>
+            {adminPasswordNotice && (
+              <div style={{ marginTop: '8px', fontSize: '0.8rem', color: '#34d399', fontWeight: 700 }}>
+                ✅ Admin password successfully updated!
+              </div>
+            )}
+          </div>
+
+          {/* Clean Demo Data / Clear All Orders */}
+          <div style={{
+            marginTop: '28px',
+            paddingTop: '24px',
+            borderTop: '1px solid var(--border-subtle)',
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
+              <Trash2 size={18} style={{ color: '#f87171' }} />
+              <h4 style={{ fontSize: '1.05rem', fontWeight: 800 }}>Clean Demo Data & Orders</h4>
+            </div>
+            <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '16px' }}>
+              Clear all orders from your live Firebase database so you can start clean for real customers.
+            </p>
+
+            <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+              <button
+                type="button"
+                onClick={handleClearAllOrders}
+                className="btn-secondary"
+                style={{ color: '#f87171', borderColor: 'rgba(239, 68, 68, 0.4)', padding: '9px 16px' }}
+              >
+                <Trash2 size={15} />
+                <span>Clear All Orders from Database</span>
+              </button>
+              {clearOrdersNotice && (
+                <span style={{ fontSize: '0.8rem', color: '#34d399', fontWeight: 700 }}>
+                  ✅ All orders cleared! Reloading...
+                </span>
+              )}
+            </div>
+          </div>
+
         </div>
       )}
 

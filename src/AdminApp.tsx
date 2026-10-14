@@ -1,9 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { AdminDashboard } from './components/admin/AdminDashboard';
-import { Lock, Eye, EyeOff, ArrowRight, Store } from 'lucide-react';
+import { Lock, Eye, EyeOff, ArrowRight, Store, ShieldAlert } from 'lucide-react';
 
 const AUTH_STORAGE_KEY = 'the_full_cart_admin_auth_v1';
+const CUSTOM_PASS_STORAGE_KEY = 'the_full_cart_admin_custom_password';
 const DEFAULT_ADMIN_PASS = 'admin123';
+const MAX_FAILED_ATTEMPTS = 5;
+const LOCKOUT_DURATION_MS = 5 * 60 * 1000; // 5 minutes
 
 export const AdminApp: React.FC = () => {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(() => {
@@ -19,28 +22,63 @@ export const AdminApp: React.FC = () => {
   const [errorMsg, setErrorMsg] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Check URL query param for quick access e.g. ?pass=admin123
+  // Brute-force lockout state
+  const [failedAttempts, setFailedAttempts] = useState<number>(() => {
+    return parseInt(sessionStorage.getItem('tfc_admin_fails') || '0', 10);
+  });
+  const [lockoutRemaining, setLockoutRemaining] = useState<number>(0);
+
+  // Check lockout on mount and interval
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const passParam = params.get('pass') || params.get('pin');
-    if (passParam === DEFAULT_ADMIN_PASS) {
-      localStorage.setItem(AUTH_STORAGE_KEY, 'true');
-      setIsAuthenticated(true);
-    }
+    const checkLockout = () => {
+      const lockUntil = parseInt(sessionStorage.getItem('tfc_admin_lockout_until') || '0', 10);
+      const diff = lockUntil - Date.now();
+      if (diff > 0) {
+        setLockoutRemaining(Math.ceil(diff / 1000));
+      } else {
+        setLockoutRemaining(0);
+      }
+    };
+
+    checkLockout();
+    const interval = setInterval(checkLockout, 1000);
+    return () => clearInterval(interval);
   }, []);
+
+  const getEffectivePassword = () => {
+    return localStorage.getItem(CUSTOM_PASS_STORAGE_KEY) || DEFAULT_ADMIN_PASS;
+  };
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
+    if (lockoutRemaining > 0) return;
+
     setIsSubmitting(true);
     setErrorMsg('');
 
-    // Check password
-    if (passwordInput.trim() === DEFAULT_ADMIN_PASS) {
+    const targetPassword = getEffectivePassword();
+
+    if (passwordInput.trim() === targetPassword) {
       localStorage.setItem(AUTH_STORAGE_KEY, 'true');
+      sessionStorage.removeItem('tfc_admin_fails');
+      sessionStorage.removeItem('tfc_admin_lockout_until');
+      setFailedAttempts(0);
       setIsAuthenticated(true);
       setErrorMsg('');
     } else {
-      setErrorMsg('Incorrect Admin Password. Default is: admin123');
+      const nextFails = failedAttempts + 1;
+      setFailedAttempts(nextFails);
+      sessionStorage.setItem('tfc_admin_fails', nextFails.toString());
+
+      if (nextFails >= MAX_FAILED_ATTEMPTS) {
+        const lockUntil = Date.now() + LOCKOUT_DURATION_MS;
+        sessionStorage.setItem('tfc_admin_lockout_until', lockUntil.toString());
+        setLockoutRemaining(Math.ceil(LOCKOUT_DURATION_MS / 1000));
+        setErrorMsg('Security Alert: 5 failed attempts reached. Portal locked for 5 minutes.');
+      } else {
+        const remaining = MAX_FAILED_ATTEMPTS - nextFails;
+        setErrorMsg(`Incorrect password. ${remaining} attempt(s) remaining before security lockout.`);
+      }
     }
     setIsSubmitting(false);
   };
@@ -60,7 +98,7 @@ export const AdminApp: React.FC = () => {
     );
   }
 
-  // Otherwise, show sleek Secure Admin Login Screen
+  // Otherwise, show sleek Secure Admin Login Screen with Brute-Force Rate Limiting
   return (
     <div style={{
       minHeight: '100vh',
@@ -130,15 +168,39 @@ export const AdminApp: React.FC = () => {
           </p>
         </div>
 
+        {/* Lockout Warning Banner */}
+        {lockoutRemaining > 0 && (
+          <div style={{
+            padding: '12px 14px',
+            borderRadius: '12px',
+            background: 'rgba(239, 68, 68, 0.15)',
+            border: '1px solid rgba(239, 68, 68, 0.4)',
+            color: '#f87171',
+            fontSize: '0.82rem',
+            fontWeight: 700,
+            marginBottom: '16px',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+          }}>
+            <ShieldAlert size={18} />
+            <div>
+              Portal locked for security: {Math.floor(lockoutRemaining / 60)}m {lockoutRemaining % 60}s remaining.
+            </div>
+          </div>
+        )}
+
         {/* Login Form */}
         <form onSubmit={handleLogin} style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
           
           <div className="form-group">
             <label className="form-label" style={{ display: 'flex', justifyContent: 'space-between' }}>
               <span>Admin Password</span>
-              <span style={{ fontSize: '0.74rem', color: '#f59e0b', fontWeight: 600 }}>
-                Default: <strong>admin123</strong>
-              </span>
+              {!localStorage.getItem(CUSTOM_PASS_STORAGE_KEY) && (
+                <span style={{ fontSize: '0.74rem', color: '#f59e0b', fontWeight: 600 }}>
+                  Default: <strong>{DEFAULT_ADMIN_PASS}</strong>
+                </span>
+              )}
             </label>
             <div style={{ position: 'relative' }}>
               <Lock size={17} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-dim)' }} />
@@ -146,6 +208,7 @@ export const AdminApp: React.FC = () => {
                 type={showPassword ? 'text' : 'password'}
                 required
                 autoFocus
+                disabled={lockoutRemaining > 0}
                 placeholder="Enter password..."
                 value={passwordInput}
                 onChange={(e) => setPasswordInput(e.target.value)}
@@ -170,7 +233,7 @@ export const AdminApp: React.FC = () => {
             </div>
           </div>
 
-          {errorMsg && (
+          {errorMsg && lockoutRemaining === 0 && (
             <div style={{
               padding: '10px 14px',
               borderRadius: '10px',
@@ -186,7 +249,7 @@ export const AdminApp: React.FC = () => {
 
           <button
             type="submit"
-            disabled={isSubmitting}
+            disabled={isSubmitting || lockoutRemaining > 0}
             className="btn-primary"
             style={{
               padding: '12px',
@@ -195,29 +258,31 @@ export const AdminApp: React.FC = () => {
               width: '100%',
               justifyContent: 'center',
               boxShadow: '0 8px 20px rgba(99, 102, 241, 0.35)',
+              opacity: lockoutRemaining > 0 ? 0.5 : 1,
             }}
           >
-            <span>Access Admin Hub</span>
+            <span>{lockoutRemaining > 0 ? `Locked (${lockoutRemaining}s)` : 'Access Admin Hub'}</span>
             <ArrowRight size={17} />
           </button>
 
-          {/* Quick autofill helper for store owner convenience */}
-          <button
-            type="button"
-            onClick={() => {
-              setPasswordInput(DEFAULT_ADMIN_PASS);
-            }}
-            style={{
-              background: 'transparent',
-              color: 'var(--text-dim)',
-              fontSize: '0.78rem',
-              textAlign: 'center',
-              textDecoration: 'underline',
-              cursor: 'pointer',
-            }}
-          >
-            Fill Default Password ({DEFAULT_ADMIN_PASS})
-          </button>
+          {/* Quick autofill helper only if default password is used */}
+          {!localStorage.getItem(CUSTOM_PASS_STORAGE_KEY) && (
+            <button
+              type="button"
+              disabled={lockoutRemaining > 0}
+              onClick={() => setPasswordInput(DEFAULT_ADMIN_PASS)}
+              style={{
+                background: 'transparent',
+                color: 'var(--text-dim)',
+                fontSize: '0.78rem',
+                textAlign: 'center',
+                textDecoration: 'underline',
+                cursor: 'pointer',
+              }}
+            >
+              Fill Default Password ({DEFAULT_ADMIN_PASS})
+            </button>
+          )}
         </form>
 
         {/* Footer Link to Customer Storefront */}

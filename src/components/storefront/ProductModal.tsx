@@ -1,6 +1,18 @@
 import React, { useState } from 'react';
 import { useStore } from '../../context/StoreContext';
-import { X, Star, ShoppingBag, MessageCircle, Truck, ShieldCheck, Check, Plus, Minus } from 'lucide-react';
+import {
+  X,
+  Star,
+  ShoppingBag,
+  MessageCircle,
+  Truck,
+  ShieldCheck,
+  Check,
+  Plus,
+  Minus,
+  Share2,
+  Copy,
+} from 'lucide-react';
 
 export const ProductModal: React.FC = () => {
   const {
@@ -13,6 +25,7 @@ export const ProductModal: React.FC = () => {
 
   const [quantity, setQuantity] = useState<number>(1);
   const [justAdded, setJustAdded] = useState<boolean>(false);
+  const [copiedLink, setCopiedLink] = useState<boolean>(false);
 
   if (!selectedProductForModal) return null;
   const product = selectedProductForModal;
@@ -37,12 +50,36 @@ export const ProductModal: React.FC = () => {
     setCartOpen(true);
   };
 
+  const directProductUrl = `${window.location.origin}/?product=${product.id}`;
+
   const handleWhatsAppOrder = () => {
     const totalItemPrice = product.price * quantity;
     const msg = encodeURIComponent(
-      `Hello ${settings.storeName}! I want to order this item:\n\n*Product:* ${product.name}\n*Quantity:* ${quantity} ${product.unit || 'unit'}\n*Price:* ${settings.currencySymbol} ${totalItemPrice.toLocaleString()}\n*SKU:* ${product.sku}\n\nPlease confirm availability and arrange Cash on Delivery delivery.`
+      `Hello ${settings.storeName}!\nI want to order / inquire about this item:\n\n` +
+      `*Product:* ${product.name} ${product.sinhalaName ? `(${product.sinhalaName})` : ''}\n` +
+      `*Quantity:* ${quantity} ${product.unit || 'unit'}\n` +
+      `*Price:* ${settings.currencySymbol} ${totalItemPrice.toLocaleString()}\n` +
+      `*SKU:* ${product.sku}\n` +
+      `*Product Link:* ${directProductUrl}\n\n` +
+      `Please confirm availability and arrange Cash on Delivery delivery.`
     );
     window.open(`https://wa.me/${settings.whatsappNumber}?text=${msg}`, '_blank');
+  };
+
+  const handleShareToWhatsApp = () => {
+    const shareText = encodeURIComponent(
+      `🛍️ Check out *${product.name}* on ${settings.storeName}!\n\n` +
+      `💰 Price: ${settings.currencySymbol} ${product.price.toLocaleString()}\n` +
+      `⭐ Rating: ${product.rating} / 5.0\n\n` +
+      `👉 Click here to view & order:\n${directProductUrl}`
+    );
+    window.open(`https://api.whatsapp.com/send?text=${shareText}`, '_blank');
+  };
+
+  const handleCopyLink = () => {
+    navigator.clipboard.writeText(directProductUrl);
+    setCopiedLink(true);
+    setTimeout(() => setCopiedLink(false), 2000);
   };
 
   const discountPercent = product.originalPrice
@@ -53,7 +90,7 @@ export const ProductModal: React.FC = () => {
     <div className="modal-backdrop" onClick={handleClose}>
       <div
         className="modal-card"
-        style={{ maxWidth: '820px' }}
+        style={{ maxWidth: '820px', maxHeight: '90vh', overflowY: 'auto' }}
         onClick={(e) => e.stopPropagation()}
       >
         {/* Close Button */}
@@ -101,25 +138,35 @@ export const ProductModal: React.FC = () => {
             />
             {product.badge && (
               <span
-                className="product-badge badge-deal"
-                style={{ top: '14px', left: '14px' }}
+                style={{
+                  position: 'absolute',
+                  top: '12px',
+                  left: '12px',
+                  background: 'var(--accent-primary)',
+                  color: 'white',
+                  fontSize: '0.74rem',
+                  fontWeight: 800,
+                  padding: '4px 10px',
+                  borderRadius: 'var(--radius-pill)',
+                  boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
+                }}
               >
                 {product.badge}
               </span>
             )}
           </div>
 
-          {/* Details */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+          {/* Product Info */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
             <div>
-              <div style={{ fontSize: '0.76rem', color: 'var(--accent-primary)', fontWeight: 800, textTransform: 'uppercase' }}>
+              <span style={{ fontSize: '0.78rem', color: '#818cf8', textTransform: 'uppercase', fontWeight: 700 }}>
                 {product.category} • SKU: {product.sku}
-              </div>
-              <h2 style={{ fontSize: '1.45rem', fontWeight: 800, marginTop: '4px' }}>
+              </span>
+              <h2 style={{ fontSize: '1.4rem', fontWeight: 800, marginTop: '4px', lineHeight: '1.3' }}>
                 {product.name}
               </h2>
               {product.sinhalaName && (
-                <div style={{ fontSize: '0.88rem', color: 'var(--text-muted)' }}>
+                <div style={{ fontSize: '0.88rem', color: '#fbbf24', marginTop: '2px' }}>
                   {product.sinhalaName}
                 </div>
               )}
@@ -194,8 +241,8 @@ export const ProductModal: React.FC = () => {
               </span>
             </div>
 
-            {/* Actions */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginTop: '10px' }}>
+            {/* Actions: Add to Cart & WhatsApp Order */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginTop: '6px' }}>
               <button
                 className="btn-primary"
                 onClick={handleAddToCart}
@@ -223,13 +270,41 @@ export const ProductModal: React.FC = () => {
               </button>
             </div>
 
-            <button
-              className="btn-secondary"
-              onClick={handleBuyNow}
-              style={{ width: '100%', justifyContent: 'center' }}
-            >
-              <span>Instant Checkout Now</span>
-            </button>
+            {/* Instant Checkout & Share Row */}
+            <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr', gap: '8px' }}>
+              <button
+                className="btn-secondary"
+                onClick={handleBuyNow}
+                style={{ justifyContent: 'center' }}
+              >
+                <span>Instant Checkout</span>
+              </button>
+
+              <button
+                className="btn-secondary"
+                onClick={handleShareToWhatsApp}
+                title="Share this product on WhatsApp"
+                style={{
+                  justifyContent: 'center',
+                  background: 'rgba(37, 211, 102, 0.12)',
+                  borderColor: 'rgba(37, 211, 102, 0.3)',
+                  color: '#4ade80',
+                }}
+              >
+                <Share2 size={15} />
+                <span>Share</span>
+              </button>
+
+              <button
+                className="btn-secondary"
+                onClick={handleCopyLink}
+                title="Copy Direct Product Link"
+                style={{ justifyContent: 'center' }}
+              >
+                {copiedLink ? <Check size={15} style={{ color: '#34d399' }} /> : <Copy size={15} />}
+                <span>{copiedLink ? 'Copied' : 'Link'}</span>
+              </button>
+            </div>
 
             {/* Trust Badges */}
             <div style={{

@@ -34,8 +34,9 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
 
   const handleDirectWhatsAppOrder = (e: React.MouseEvent) => {
     e.stopPropagation();
+    const productUrl = `${window.location.origin}/?product=${product.id}`;
     const message = encodeURIComponent(
-      `Hello ${settings.storeName}! I want to order this product:\n\n*Product:* ${product.name}\n*Price:* ${settings.currencySymbol} ${product.price.toLocaleString()}\n*SKU:* ${product.sku}\n\nPlease let me know how to proceed with Cash on Delivery.`
+      `Hello ${settings.storeName}! I want to order this product:\n\n*Product:* ${product.name} ${product.sinhalaName ? `(${product.sinhalaName})` : ''}\n*Price:* ${settings.currencySymbol} ${product.price.toLocaleString()}\n*SKU:* ${product.sku}\n*Link:* ${productUrl}\n\nPlease let me know how to proceed with Cash on Delivery.`
     );
     window.open(`https://wa.me/${settings.whatsappNumber}?text=${message}`, '_blank');
   };
@@ -89,32 +90,37 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
         </h3>
 
         {product.sinhalaName && (
-          <div className="product-sinhala-name">{product.sinhalaName}</div>
+          <div className="product-sinhala-name">
+            {product.sinhalaName}
+          </div>
         )}
 
-        {/* Ratings */}
+        {/* Rating and Reviews */}
         <div className="product-rating-row">
-          <div style={{ display: 'flex', alignItems: 'center', gap: '3px' }}>
-            <Star size={14} fill="#f59e0b" color="#f59e0b" />
-            <span style={{ fontWeight: 700 }}>{product.rating}</span>
+          <div className="star-badge">
+            <Star size={13} fill="#f59e0b" color="#f59e0b" />
+            <span>{product.rating.toFixed(1)}</span>
           </div>
           <span className="reviews-count">({product.reviewsCount} reviews)</span>
         </div>
 
-        {/* Pricing */}
-        <div className="product-pricing-row">
-          <span className="current-price">
-            {settings.currencySymbol} {product.price.toLocaleString()}
-          </span>
-
-          {product.originalPrice && product.originalPrice > product.price && (
-            <span className="original-price">
-              {settings.currencySymbol} {product.originalPrice.toLocaleString()}
+        {/* Pricing Row */}
+        <div className="product-price-row">
+          <div className="price-tag-wrap">
+            <span className="current-price">
+              {settings.currencySymbol} {product.price.toLocaleString()}
             </span>
-          )}
+            {product.originalPrice && product.originalPrice > product.price && (
+              <span className="original-price">
+                {settings.currencySymbol} {product.originalPrice.toLocaleString()}
+              </span>
+            )}
+          </div>
 
           {discountPercent > 0 && (
-            <span className="discount-tag">-{discountPercent}%</span>
+            <span className="discount-pill">
+              -{discountPercent}%
+            </span>
           )}
         </div>
 
@@ -149,7 +155,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
           <button
             className="btn-whatsapp-direct"
             onClick={handleDirectWhatsAppOrder}
-            title="Order instantly via WhatsApp"
+            title="Order / Inquire via WhatsApp"
           >
             <MessageCircle size={18} />
           </button>

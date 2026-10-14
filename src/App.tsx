@@ -1,5 +1,5 @@
-import React from 'react';
-import { StoreProvider } from './context/StoreContext';
+import React, { useEffect } from 'react';
+import { StoreProvider, useStore } from './context/StoreContext';
 import { Header } from './components/common/Header';
 import { BottomNav } from './components/common/BottomNav';
 import { Footer } from './components/common/Footer';
@@ -11,10 +11,32 @@ import { CartDrawer } from './components/storefront/CartDrawer';
 import { CheckoutModal } from './components/storefront/CheckoutModal';
 import { OrderSuccessModal } from './components/storefront/OrderSuccessModal';
 import { TrackOrderModal } from './components/storefront/TrackOrderModal';
+import { PwaInstallBanner } from './components/common/PwaInstallBanner';
 
 const CustomerStorefrontLayout: React.FC = () => {
+  const { products, setSelectedProductForModal } = useStore();
+
+  // Listen to ?product=<id> query parameter and auto-open matching product modal
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const targetProductId = params.get('product') || params.get('item') || params.get('id');
+    if (targetProductId && products.length > 0) {
+      const matched = products.find(
+        (p) =>
+          p.id === targetProductId ||
+          p.sku.toLowerCase() === targetProductId.toLowerCase()
+      );
+      if (matched) {
+        setSelectedProductForModal(matched);
+      }
+    }
+  }, [products, setSelectedProductForModal]);
+
   return (
     <div className="app-container">
+      {/* PWA Floating Install Prompt */}
+      <PwaInstallBanner />
+
       {/* Header Navigation */}
       <Header />
 
