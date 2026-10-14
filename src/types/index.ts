@@ -14,9 +14,11 @@ export interface Product {
   reviewsCount: number;
   badge?: string;
   isFeatured?: boolean;
+  freeDelivery?: boolean;
   unit?: string;
   sku: string;
 }
+
 
 export interface CartItem {
   product: Product;

@@ -25,14 +25,8 @@ export const TrackOrderModal: React.FC = () => {
     setHasSearched(true);
   };
 
-  const handleQuickDemo = (code: string) => {
-    setInputQuery(code);
-    const found = findOrder(code);
-    setSearchedOrder(found || null);
-    setHasSearched(true);
-  };
-
   const getStepIndex = (status: OrderStatus) => {
+
     switch (status) {
       case 'pending': return 1;
       case 'processing': return 2;
@@ -115,30 +109,8 @@ export const TrackOrderModal: React.FC = () => {
             </button>
           </form>
 
-          {/* Quick Demo Samples */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap', fontSize: '0.76rem', color: 'var(--text-muted)' }}>
-            <span>Quick Test:</span>
-            <button
-              onClick={() => handleQuickDemo('TFC-8821')}
-              style={{ padding: '3px 8px', borderRadius: '4px', background: 'rgba(255,255,255,0.06)', color: '#c7d2fe' }}
-            >
-              TFC-8821 (Dispatched)
-            </button>
-            <button
-              onClick={() => handleQuickDemo('TFC-8822')}
-              style={{ padding: '3px 8px', borderRadius: '4px', background: 'rgba(255,255,255,0.06)', color: '#93c5fd' }}
-            >
-              TFC-8822 (Processing)
-            </button>
-            <button
-              onClick={() => handleQuickDemo('TFC-8823')}
-              style={{ padding: '3px 8px', borderRadius: '4px', background: 'rgba(255,255,255,0.06)', color: '#86efac' }}
-            >
-              TFC-8823 (Delivered)
-            </button>
-          </div>
-
           {/* Result or Not Found */}
+
           {hasSearched && !searchedOrder && (
             <div style={{
               textAlign: 'center',

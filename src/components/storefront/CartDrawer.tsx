@@ -76,29 +76,37 @@ export const CartDrawer: React.FC = () => {
           </button>
         </div>
 
-        {/* Free Shipping Progress Indicator */}
-        <div style={{ padding: '12px 20px', background: 'rgba(99, 102, 241, 0.08)', borderBottom: '1px solid var(--border-subtle)' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.76rem', marginBottom: '6px' }}>
-            <span>
-              {remainingForFreeDelivery === 0 ? (
-                <strong style={{ color: '#34d399' }}>🎉 You unlocked FREE Delivery!</strong>
-              ) : (
-                <>Add <strong>{settings.currencySymbol} {remainingForFreeDelivery.toLocaleString()}</strong> more for FREE delivery</>
-              )}
-            </span>
-            <span style={{ fontWeight: 700, color: '#818cf8' }}>{Math.round(freeDeliveryProgress)}%</span>
+        {/* Free Shipping Notice if applicable */}
+        {settings.freeDeliveryThreshold > 0 ? (
+          <div style={{ padding: '12px 20px', background: 'rgba(99, 102, 241, 0.08)', borderBottom: '1px solid var(--border-subtle)' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.76rem', marginBottom: '6px' }}>
+              <span>
+                {remainingForFreeDelivery === 0 ? (
+                  <strong style={{ color: '#34d399' }}>🎉 You unlocked FREE Delivery!</strong>
+                ) : (
+                  <>Add <strong>{settings.currencySymbol} {remainingForFreeDelivery.toLocaleString()}</strong> more for FREE delivery</>
+                )}
+              </span>
+              <span style={{ fontWeight: 700, color: '#818cf8' }}>{Math.round(freeDeliveryProgress)}%</span>
+            </div>
+            <div style={{ height: '6px', background: 'rgba(255, 255, 255, 0.1)', borderRadius: '9999px', overflow: 'hidden' }}>
+              <div
+                style={{
+                  width: `${freeDeliveryProgress}%`,
+                  height: '100%',
+                  background: remainingForFreeDelivery === 0 ? 'linear-gradient(90deg, #10b981, #34d399)' : 'linear-gradient(90deg, #6366f1, #38bdf8)',
+                  transition: 'width 0.4s ease',
+                }}
+              />
+            </div>
           </div>
-          <div style={{ height: '6px', background: 'rgba(255, 255, 255, 0.1)', borderRadius: '9999px', overflow: 'hidden' }}>
-            <div
-              style={{
-                width: `${freeDeliveryProgress}%`,
-                height: '100%',
-                background: remainingForFreeDelivery === 0 ? 'linear-gradient(90deg, #10b981, #34d399)' : 'linear-gradient(90deg, #6366f1, #38bdf8)',
-                transition: 'width 0.4s ease',
-              }}
-            />
+        ) : cart.some((i) => i.product.freeDelivery) ? (
+          <div style={{ padding: '10px 20px', background: 'rgba(16, 185, 129, 0.1)', borderBottom: '1px solid rgba(16, 185, 129, 0.2)', fontSize: '0.78rem', color: '#34d399', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <span>🚚</span>
+            <span>Free Delivery included on selected item(s) in your cart!</span>
           </div>
-        </div>
+        ) : null}
+
 
         {/* Body / Items */}
         <div className="drawer-body">

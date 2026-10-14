@@ -34,17 +34,18 @@ export const Header: React.FC = () => {
           {/* Logo & Brand */}
           <div className="brand-logo" onClick={handleLogoClick}>
             <img
-              src="/logo.png"
-              alt="The Full Cart Logo"
+              src="/app-icon.png"
+              alt="The Full Cart Icon"
               style={{
-                width: '44px',
-                height: '44px',
-                borderRadius: '50%',
+                width: '42px',
+                height: '42px',
+                borderRadius: '11px',
                 objectFit: 'cover',
-                border: '2px solid #f59e0b',
-                boxShadow: '0 0 12px rgba(245, 158, 11, 0.35)',
+                border: '1.5px solid rgba(245, 158, 11, 0.6)',
+                boxShadow: '0 0 16px rgba(245, 158, 11, 0.4)',
               }}
             />
+
             <div className="brand-text">
               <h1 style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
                 The <span style={{ color: '#f59e0b', WebkitTextFillColor: '#f59e0b' }}>Full Cart</span>

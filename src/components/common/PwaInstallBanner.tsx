@@ -66,10 +66,11 @@ export const PwaInstallBanner: React.FC = () => {
     }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
         <img
-          src="/logo.png"
-          alt="The Full Cart"
-          style={{ width: '38px', height: '38px', borderRadius: '50%', border: '1.5px solid #f59e0b' }}
+          src="/app-icon.png"
+          alt="The Full Cart App"
+          style={{ width: '40px', height: '40px', borderRadius: '10px', border: '1.5px solid rgba(245, 158, 11, 0.6)' }}
         />
+
         <div>
           <div style={{ fontSize: '0.86rem', fontWeight: 800, color: '#f8fafc' }}>
             Install The Full Cart App

@@ -136,24 +136,40 @@ export const ProductModal: React.FC = () => {
                 borderRadius: 'var(--radius-lg)',
               }}
             />
-            {product.badge && (
-              <span
-                style={{
-                  position: 'absolute',
-                  top: '12px',
-                  left: '12px',
-                  background: 'var(--accent-primary)',
-                  color: 'white',
-                  fontSize: '0.74rem',
-                  fontWeight: 800,
-                  padding: '4px 10px',
-                  borderRadius: 'var(--radius-pill)',
-                  boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
-                }}
-              >
-                {product.badge}
-              </span>
-            )}
+            <div style={{ position: 'absolute', top: '12px', left: '12px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+              {product.freeDelivery && (
+                <span
+                  style={{
+                    background: 'linear-gradient(135deg, #10b981, #059669)',
+                    color: 'white',
+                    fontSize: '0.74rem',
+                    fontWeight: 800,
+                    padding: '4px 10px',
+                    borderRadius: 'var(--radius-pill)',
+                    boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
+                    letterSpacing: '0.04em',
+                  }}
+                >
+                  🚚 FREE DELIVERY
+                </span>
+              )}
+              {product.badge && (
+                <span
+                  style={{
+                    background: 'var(--accent-primary)',
+                    color: 'white',
+                    fontSize: '0.74rem',
+                    fontWeight: 800,
+                    padding: '4px 10px',
+                    borderRadius: 'var(--radius-pill)',
+                    boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
+                  }}
+                >
+                  {product.badge}
+                </span>
+              )}
+            </div>
+
           </div>
 
           {/* Product Info */}

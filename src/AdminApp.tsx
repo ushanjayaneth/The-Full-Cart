@@ -124,27 +124,28 @@ export const AdminApp: React.FC = () => {
           <div style={{
             width: '68px',
             height: '68px',
-            borderRadius: '50%',
+            borderRadius: '16px',
             margin: '0 auto 16px',
             background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            padding: '3px',
-            boxShadow: '0 0 25px rgba(245, 158, 11, 0.35)',
+            padding: '2.5px',
+            boxShadow: '0 0 25px rgba(245, 158, 11, 0.4)',
           }}>
             <img
-              src="/logo.png"
-              alt="The Full Cart"
+              src="/app-icon.png"
+              alt="The Full Cart Icon"
               style={{
                 width: '100%',
                 height: '100%',
-                borderRadius: '50%',
+                borderRadius: '14px',
                 objectFit: 'cover',
                 background: '#0a0e17',
               }}
             />
           </div>
+
 
           <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', marginBottom: '6px' }}>
             <span style={{

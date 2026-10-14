@@ -58,6 +58,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
   const [selectedInvoiceOrder, setSelectedInvoiceOrder] = useState<Order | null>(null);
   const [orderFilterStatus, setOrderFilterStatus] = useState<string>('all');
   const [orderSearchQuery, setOrderSearchQuery] = useState<string>('');
+  const [productSearchQuery, setProductSearchQuery] = useState<string>('');
+  const [productCategoryFilter, setProductCategoryFilter] = useState<string>('all');
 
   // Firebase config & seed state
   const [isFirebaseModalOpen, setIsFirebaseModalOpen] = useState(false);
@@ -118,6 +120,22 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
     return true;
   });
 
+  // Filtered products
+  const filteredProducts = products.filter((p) => {
+    if (productCategoryFilter !== 'all' && p.category !== productCategoryFilter) {
+      return false;
+    }
+    if (productSearchQuery.trim()) {
+      const q = productSearchQuery.toLowerCase();
+      const matchName = p.name.toLowerCase().includes(q);
+      const matchSku = p.sku.toLowerCase().includes(q);
+      const matchSinhala = p.sinhalaName ? p.sinhalaName.includes(q) : false;
+      return matchName || matchSku || matchSinhala;
+    }
+    return true;
+  });
+
+
   // WhatsApp customer updater
   const handleWhatsAppCustomer = (order: Order) => {
     const statusText =
@@ -147,7 +165,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
       sku: `SKU-${Math.floor(1000 + Math.random() * 9000)}`,
       name: '',
       sinhalaName: '',
-      category: 'electronics',
+      category: 'lifestyle',
       price: 2500,
       originalPrice: 3200,
       stock: 15,
@@ -157,10 +175,12 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
       reviewsCount: 1,
       badge: 'NEW',
       isFeatured: true,
+      freeDelivery: false,
       unit: 'Piece',
     });
     setProductModalOpen(true);
   };
+
 
   const openEditProductModal = (prod: Product) => {
     setEditingProduct(prod);
@@ -857,6 +877,34 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
             </button>
           </div>
 
+          {/* Product Filter Toolbar */}
+          <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', alignItems: 'center' }}>
+            <div style={{ position: 'relative', flex: 1, minWidth: '240px' }}>
+              <Search size={17} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-dim)' }} />
+              <input
+                type="text"
+                placeholder="Search products by name, SKU, or Sinhala..."
+                value={productSearchQuery}
+                onChange={(e) => setProductSearchQuery(e.target.value)}
+                className="form-input"
+                style={{ paddingLeft: '38px', height: '40px' }}
+              />
+            </div>
+            <select
+              value={productCategoryFilter}
+              onChange={(e) => setProductCategoryFilter(e.target.value)}
+              className="form-select"
+              style={{ width: 'auto', minWidth: '180px', height: '40px' }}
+            >
+              <option value="all">All Categories ({products.length})</option>
+              <option value="lifestyle">Lifestyle & Accessories</option>
+              <option value="fashion">Fashion & Wear</option>
+              <option value="home">Home & Kitchen</option>
+              <option value="groceries">Groceries & Foods</option>
+              <option value="beauty">Health & Beauty</option>
+            </select>
+          </div>
+
           {/* Products List Table */}
           <div className="table-responsive">
             <table className="admin-table">
@@ -871,26 +919,40 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
                 </tr>
               </thead>
               <tbody>
-                {products.map((prod) => (
-                  <tr key={prod.id}>
-                    <td>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                        <img
-                          src={prod.image}
-                          alt={prod.name}
-                          style={{ width: '48px', height: '48px', borderRadius: '8px', objectFit: 'cover' }}
-                        />
-                        <div>
-                          <div style={{ fontWeight: 700, fontSize: '0.9rem' }}>{prod.name}</div>
-                          {prod.sinhalaName && (
-                            <div style={{ fontSize: '0.75rem', color: '#fbbf24' }}>{prod.sinhalaName}</div>
-                          )}
-                          <div style={{ fontSize: '0.74rem', color: 'var(--text-dim)' }}>
-                            SKU: {prod.sku} {prod.badge ? `• ${prod.badge}` : ''}
+                {filteredProducts.length === 0 ? (
+                  <tr>
+                    <td colSpan={6} style={{ textAlign: 'center', padding: '36px', color: 'var(--text-muted)' }}>
+                      No products match your filter.
+                    </td>
+                  </tr>
+                ) : (
+                  filteredProducts.map((prod) => (
+                    <tr key={prod.id}>
+                      <td>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                          <img
+                            src={prod.image}
+                            alt={prod.name}
+                            style={{ width: '48px', height: '48px', borderRadius: '8px', objectFit: 'cover' }}
+                          />
+                          <div>
+                            <div style={{ fontWeight: 700, fontSize: '0.9rem' }}>{prod.name}</div>
+                            {prod.sinhalaName && (
+                              <div style={{ fontSize: '0.75rem', color: '#fbbf24' }}>{prod.sinhalaName}</div>
+                            )}
+                            <div style={{ fontSize: '0.74rem', color: 'var(--text-dim)', display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap', marginTop: '2px' }}>
+                              <span>SKU: {prod.sku}</span>
+                              {prod.badge && <span style={{ color: 'var(--accent-primary)' }}>• {prod.badge}</span>}
+                              {prod.freeDelivery && (
+                                <span style={{ background: 'rgba(16, 185, 129, 0.15)', color: '#34d399', fontSize: '0.7rem', padding: '1px 6px', borderRadius: '4px', fontWeight: 700 }}>
+                                  🚚 Free Delivery
+                                </span>
+                              )}
+                            </div>
                           </div>
                         </div>
-                      </div>
-                    </td>
+                      </td>
+
 
                     <td>
                       <span style={{ fontSize: '0.78rem', textTransform: 'capitalize', color: '#a5b4fc', background: 'rgba(99,102,241,0.1)', padding: '2px 8px', borderRadius: '4px' }}>
@@ -963,8 +1025,11 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
                       </div>
                     </td>
                   </tr>
-                ))}
+                ))
+              )}
+
               </tbody>
+
             </table>
           </div>
 
@@ -1026,12 +1091,13 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
                         onChange={(e) => setProductForm({ ...productForm, category: e.target.value })}
                         className="form-select"
                       >
-                        <option value="electronics">Electronics & Tech</option>
+                        <option value="lifestyle">Lifestyle & Accessories</option>
                         <option value="fashion">Fashion & Wear</option>
                         <option value="home">Home & Kitchen</option>
                         <option value="groceries">Groceries & Foods</option>
                         <option value="beauty">Health & Beauty</option>
                       </select>
+
                     </div>
 
                     <div className="form-group">
@@ -1260,6 +1326,20 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
                       </label>
                     </div>
 
+                    <div className="form-group" style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '10px' }}>
+                      <input
+                        type="checkbox"
+                        id="freeDeliveryProd"
+                        checked={productForm.freeDelivery || false}
+                        onChange={(e) => setProductForm({ ...productForm, freeDelivery: e.target.checked })}
+                        style={{ width: '18px', height: '18px', accentColor: '#10b981' }}
+                      />
+                      <label htmlFor="freeDeliveryProd" style={{ fontSize: '0.86rem', fontWeight: 600, cursor: 'pointer', color: '#34d399' }}>
+                        🚚 Free Delivery for this item
+                      </label>
+                    </div>
+
+
                   </div>
 
                   <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '10px' }}>
@@ -1341,6 +1421,9 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
                   onChange={(e) => setSettingsForm({ ...settingsForm, freeDeliveryThreshold: Number(e.target.value) })}
                   className="form-input"
                 />
+                <span style={{ fontSize: '0.72rem', color: 'var(--text-dim)' }}>
+                  Set to 0 to disable. Free delivery will only apply to individually selected items.
+                </span>
               </div>
 
               <div className="form-group">
@@ -1370,8 +1453,13 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
                   value={settingsForm.bannerNotice}
                   onChange={(e) => setSettingsForm({ ...settingsForm, bannerNotice: e.target.value })}
                   className="form-input"
+                  placeholder="e.g. Leave empty to hide the announcement banner"
                 />
+                <span style={{ fontSize: '0.72rem', color: 'var(--text-dim)' }}>
+                  Leave completely empty if you do not want an announcement banner at the top of the storefront.
+                </span>
               </div>
+
 
               <div className="form-group" style={{ gridColumn: '1 / -1' }}>
                 <label className="form-label">Physical Store / Dispatch Address</label>

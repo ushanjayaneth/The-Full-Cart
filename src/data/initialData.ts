@@ -2,7 +2,7 @@ import type { Product, Order, StoreSettings } from '../types';
 
 export const CATEGORIES = [
   { id: 'all', name: 'All Items', icon: 'Sparkles', labelSinhala: 'සියලුම භාණ්ඩ' },
-  { id: 'electronics', name: 'Electronics & Tech', icon: 'Smartphone', labelSinhala: 'ඉලෙක්ට්‍රොනික්ස්' },
+  { id: 'lifestyle', name: 'Lifestyle & Accessories', icon: 'Sparkles', labelSinhala: 'ජීවන රටා උපාංග' },
   { id: 'fashion', name: 'Fashion & Wear', icon: 'Shirt', labelSinhala: 'ඇඳුම් පැළඳුම්' },
   { id: 'home', name: 'Home & Kitchen', icon: 'Home', labelSinhala: 'නිවෙස් උපකරණ' },
   { id: 'groceries', name: 'Groceries & Foods', icon: 'Apple', labelSinhala: 'කෑම බීම & සිල්ලර' },
@@ -12,15 +12,15 @@ export const CATEGORIES = [
 export const INITIAL_PRODUCTS: Product[] = [
   {
     id: 'prod-001',
-    sku: 'TECH-ANC-PRO',
+    sku: 'LIFE-ANC-PRO',
     name: 'Wireless ANC Noise Cancelling Earbuds',
     sinhalaName: 'වයර්ලස් බ්ලූටූත් ඉයර්බඩ්ස්',
-    category: 'electronics',
+    category: 'lifestyle',
     price: 6850,
     originalPrice: 8900,
     stock: 24,
     image: 'https://images.unsplash.com/photo-1590658268037-6bf12165a8df?auto=format&fit=crop&w=800&q=80',
-    description: 'Ultra-low latency wireless earbuds with 36hr battery backup, deep bass boost, touch controls, and IPX5 water resistance. Includes Type-C fast charging case.',
+    description: 'Ultra-low latency wireless audio earbuds with 36hr battery backup, deep bass acoustic drivers, touch controls, and IPX5 splash resistance.',
     rating: 4.9,
     reviewsCount: 142,
     badge: 'BESTSELLER',
@@ -29,15 +29,15 @@ export const INITIAL_PRODUCTS: Product[] = [
   },
   {
     id: 'prod-002',
-    sku: 'TECH-SMART-ULTRA',
-    name: 'Amoled Bluetooth Calling Smartwatch',
+    sku: 'LIFE-SMART-WATCH',
+    name: 'Amoled Fitness & Activity Smartwatch',
     sinhalaName: 'ඇමතුම් පහසුකම් සහිත ස්මාර්ට් ඔරලෝසුව',
-    category: 'electronics',
+    category: 'lifestyle',
     price: 9950,
     originalPrice: 13500,
     stock: 14,
     image: 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?auto=format&fit=crop&w=800&q=80',
-    description: 'High resolution AMOLED display, 100+ sports modes, heart rate & SpO2 tracking, Sri Lanka time sync, sleep tracking and Bluetooth phone calling.',
+    description: 'High resolution AMOLED touch display, 100+ sports activity modes, health vitals monitoring, sleep tracking, and hands-free clear voice calling.',
     rating: 4.8,
     reviewsCount: 98,
     badge: 'HOT DEAL',
@@ -127,6 +127,7 @@ export const INITIAL_PRODUCTS: Product[] = [
     reviewsCount: 210,
     badge: '100% PURE',
     isFeatured: true,
+    freeDelivery: true, // Selected item with Free Delivery!
     unit: 'Pack (500g)',
   },
   {
@@ -178,19 +179,20 @@ export const INITIAL_PRODUCTS: Product[] = [
     reviewsCount: 46,
     badge: 'LUXURY',
     isFeatured: true,
+    freeDelivery: true, // Selected item with Free Delivery!
     unit: 'Bottle (100ml)',
   },
   {
     id: 'prod-011',
-    sku: 'TECH-FAST-CHARGER',
-    name: '65W GaN Dual Type-C & USB Fast Wall Charger',
+    sku: 'LIFE-FAST-CHARGER',
+    name: '65W GaN Dual Port Ultra-Fast Smart Charger',
     sinhalaName: 'වේගවත් 65W චාජර් එක',
-    category: 'electronics',
+    category: 'lifestyle',
     price: 5200,
     originalPrice: 6500,
     stock: 28,
     image: 'https://images.unsplash.com/photo-1583863788434-e58a36330cf0?auto=format&fit=crop&w=800&q=80',
-    description: 'Next-gen Gallium Nitride (GaN) fast charger. Powers Laptops, MacBooks, iPhones, Samsung, and Android tablets simultaneously with smart power distribution.',
+    description: 'Next-generation Gallium Nitride (GaN) fast charging adapter. Smart power distribution with multi-protection safety suite and compact foldable design.',
     rating: 4.8,
     reviewsCount: 118,
     badge: 'ESSENTIAL',
@@ -220,7 +222,7 @@ export const INITIAL_ORDERS: Order[] = [];
 
 export const INITIAL_SETTINGS: StoreSettings = {
   storeName: 'The Full Cart',
-  tagline: 'Your #1 Premium Online Order & Shopping Destination',
+  tagline: 'Your #1 Premium Online Shopping Destination',
   currencySymbol: 'Rs.',
   currencyCode: 'LKR',
   whatsappNumber: '94776338514',
@@ -228,9 +230,10 @@ export const INITIAL_SETTINGS: StoreSettings = {
   supportEmail: 'orders@thefullcart.lk',
   address: 'Level 4, Orion City Park, Baseline Road, Colombo 09, Sri Lanka',
   deliveryFee: 350,
-  freeDeliveryThreshold: 5000,
-  bannerNotice: '⚡ SPECIAL OFFER: FREE Islandwide Delivery on Orders Over Rs. 5,000! Use Code FULLCART10 for 10% OFF! ⚡',
+  freeDeliveryThreshold: 0, // 0 = disabled (only selected items get free delivery)
+  bannerNotice: '', // Removed!
   enablePromoDiscount: true,
   promoCode: 'FULLCART10',
   promoDiscountPercent: 10,
 };
+

@@ -58,15 +58,35 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
         />
 
         {/* Badges */}
-        {product.stock <= 5 && product.stock > 0 ? (
-          <span className="product-badge badge-low-stock">
-            ONLY {product.stock} LEFT!
-          </span>
-        ) : product.badge ? (
-          <span className={`product-badge ${getBadgeClass(product.badge)}`}>
-            {product.badge}
-          </span>
-        ) : null}
+        <div style={{ position: 'absolute', top: '10px', left: '10px', display: 'flex', flexDirection: 'column', gap: '4px', zIndex: 2 }}>
+          {product.freeDelivery && (
+            <span style={{
+              background: 'linear-gradient(135deg, #10b981, #059669)',
+              color: 'white',
+              fontSize: '0.68rem',
+              fontWeight: 800,
+              padding: '3px 8px',
+              borderRadius: '6px',
+              boxShadow: '0 2px 8px rgba(16, 185, 129, 0.4)',
+              letterSpacing: '0.04em',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '4px',
+            }}>
+              🚚 FREE DELIVERY
+            </span>
+          )}
+          {product.stock <= 5 && product.stock > 0 ? (
+            <span className="product-badge badge-low-stock">
+              ONLY {product.stock} LEFT!
+            </span>
+          ) : product.badge ? (
+            <span className={`product-badge ${getBadgeClass(product.badge)}`}>
+              {product.badge}
+            </span>
+          ) : null}
+        </div>
+
 
         {/* Quick View Button */}
         <button

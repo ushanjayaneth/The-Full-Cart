@@ -1,7 +1,7 @@
 {
   "name": "The Full Cart — Online Shopping & Delivery",
   "short_name": "TheFullCart",
-  "description": "More For Your Everyday Needs. Easy shopping for mobile, tablet & PC with islandwide Cash on Delivery.",
+  "description": "More For Your Everyday Needs. Premium online shopping with islandwide Cash on Delivery and instant WhatsApp ordering.",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
@@ -11,13 +11,13 @@
   "categories": ["shopping", "lifestyle", "business"],
   "icons": [
     {
-      "src": "/logo.png",
+      "src": "/app-icon.png",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "any maskable"
     },
     {
-      "src": "/logo.png",
+      "src": "/app-icon.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any maskable"

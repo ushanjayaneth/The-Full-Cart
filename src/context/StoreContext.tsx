@@ -113,11 +113,15 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       if (!merged.whatsappNumber || merged.whatsappNumber === '94771234567') {
         merged.whatsappNumber = '94776338514';
       }
+      if (merged.bannerNotice && merged.bannerNotice.includes('5,000')) {
+        merged.bannerNotice = '';
+      }
       return merged;
     } catch {
       return INITIAL_SETTINGS;
     }
   });
+
 
   // Cart state
   const [cart, setCart] = useState<CartItem[]>(() => {
@@ -235,10 +239,17 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       ? Math.round((cartSubtotal * settings.promoDiscountPercent) / 100)
       : 0;
 
+  // Selected item free delivery check:
+  const hasOnlyFreeDeliveryItems =
+    cart.length > 0 && cart.every((item) => item.product.freeDelivery === true);
+
   const deliveryFee =
-    cartSubtotal === 0 || cartSubtotal >= settings.freeDeliveryThreshold
+    cart.length === 0 ||
+    hasOnlyFreeDeliveryItems ||
+    (settings.freeDeliveryThreshold > 0 && cartSubtotal >= settings.freeDeliveryThreshold)
       ? 0
       : settings.deliveryFee;
+
 
   const cartTotal = Math.max(0, cartSubtotal - promoDiscount + deliveryFee);
   const cartCount = cart.reduce((sum, item) => sum + item.quantity, 0);

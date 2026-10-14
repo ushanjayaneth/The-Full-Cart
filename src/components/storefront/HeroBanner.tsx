@@ -113,12 +113,12 @@ export const HeroBanner: React.FC = () => {
             <h1 className="hero-title">
               Instant Shopping for <br />
               <span className="gradient-text" style={{ background: 'linear-gradient(135deg, #ffffff, #fbbf24, #f59e0b)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
-                Mobile, Tablet & PC
+                Everyday Essentials & Lifestyle
               </span>
             </h1>
 
             <p className="hero-subtitle">
-              Browse top electronics, fashion, home essentials, groceries, and beauty.
+              Browse top fashion, home essentials, groceries, health & beauty, and lifestyle essentials.
               Enjoy <strong>1-Click WhatsApp orders</strong>, fast courier delivery to your doorstep, and <strong>live order tracking</strong>!
             </p>
 
@@ -183,10 +183,11 @@ export const HeroBanner: React.FC = () => {
             <Truck size={22} />
           </div>
           <div className="perk-info">
-            <h4>Free Islandwide Shipping</h4>
-            <p>On all orders above Rs. {settings.freeDeliveryThreshold.toLocaleString()}</p>
+            <h4>Fast Islandwide Delivery</h4>
+            <p>Reliable doorstep delivery across all 25 districts</p>
           </div>
         </div>
+
 
         <div className="perk-card">
           <div className="perk-icon-wrap" style={{ background: 'rgba(16, 185, 129, 0.15)', color: '#34d399' }}>
