@@ -174,12 +174,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         }
       });
 
-      // If listeners initialized successfully
-      if (unsubProducts || unsubOrders || unsubSettings) {
-        setFirebaseStatus('connected');
-      } else {
-        setFirebaseStatus('offline_fallback');
-      }
+      setFirebaseStatus('connected');
 
       return () => {
         if (unsubProducts) unsubProducts();

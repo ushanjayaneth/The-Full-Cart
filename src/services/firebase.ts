@@ -1,197 +1,206 @@
-import { initializeApp, getApps, getApp, type FirebaseApp } from 'firebase/app';
-import {
-  getFirestore,
-  collection,
-  doc,
-  setDoc,
-  updateDoc,
-  deleteDoc,
-  onSnapshot,
-  query,
-  orderBy,
-  type Firestore,
-  type Unsubscribe,
-} from 'firebase/firestore';
 import type { Product, Order, OrderStatus, StoreSettings } from '../types';
 
-// Storage key for custom Firebase config in browser localStorage
-const FIREBASE_CONFIG_STORAGE_KEY = 'the_full_cart_firebase_config_v1';
+// Default Firebase Realtime Database URL provided by user
+const DEFAULT_DATABASE_URL = 'https://the-full-cart-51c6c-default-rtdb.firebaseio.com';
+const STORAGE_KEY_DB_URL = 'the_full_cart_rtdb_url_v1';
 
-export interface FirebaseConfigParams {
-  apiKey: string;
-  authDomain: string;
-  projectId: string;
-  storageBucket: string;
-  messagingSenderId: string;
-  appId: string;
-}
-
-// Check environment variables or saved localStorage config
-export function getFirebaseConfig(): FirebaseConfigParams | null {
+export function getDatabaseUrl(): string {
   try {
-    // 1. Check localStorage first (allows setting via Admin UI without code edit)
-    const localSaved = localStorage.getItem(FIREBASE_CONFIG_STORAGE_KEY);
-    if (localSaved) {
-      const parsed = JSON.parse(localSaved);
-      if (parsed?.apiKey && parsed?.projectId) {
-        return parsed;
-      }
-    }
+    const saved = localStorage.getItem(STORAGE_KEY_DB_URL);
+    if (saved && saved.trim()) return saved.trim().replace(/\/+$/, '');
   } catch (e) {
-    console.warn('Could not read firebase config from localStorage', e);
+    console.warn(e);
   }
-
-  // 2. Check import.meta.env
-  const envApiKey = import.meta.env.VITE_FIREBASE_API_KEY;
-  const envProjectId = import.meta.env.VITE_FIREBASE_PROJECT_ID;
-
-  if (envApiKey && envProjectId && envApiKey !== 'YOUR_API_KEY') {
-    return {
-      apiKey: envApiKey,
-      authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || `${envProjectId}.firebaseapp.com`,
-      projectId: envProjectId,
-      storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || `${envProjectId}.appspot.com`,
-      messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || '',
-      appId: import.meta.env.VITE_FIREBASE_APP_ID || '',
-    };
-  }
-
-  return null;
+  const envUrl = import.meta.env.VITE_FIREBASE_DATABASE_URL;
+  if (envUrl && envUrl.trim()) return envUrl.trim().replace(/\/+$/, '');
+  return DEFAULT_DATABASE_URL;
 }
 
-export function saveCustomFirebaseConfig(config: FirebaseConfigParams | null): void {
-  if (!config) {
-    localStorage.removeItem(FIREBASE_CONFIG_STORAGE_KEY);
+export function saveDatabaseUrl(url: string): void {
+  if (!url || !url.trim()) {
+    localStorage.removeItem(STORAGE_KEY_DB_URL);
   } else {
-    localStorage.setItem(FIREBASE_CONFIG_STORAGE_KEY, JSON.stringify(config));
+    localStorage.setItem(STORAGE_KEY_DB_URL, url.trim().replace(/\/+$/, ''));
   }
 }
 
 export function isFirebaseConfigured(): boolean {
-  return getFirebaseConfig() !== null;
+  return Boolean(getDatabaseUrl());
 }
 
-// Singleton instances
-let appInstance: FirebaseApp | null = null;
-let dbInstance: Firestore | null = null;
-
-export function getFirebaseDb(): Firestore | null {
-  if (dbInstance) return dbInstance;
-
-  const config = getFirebaseConfig();
-  if (!config) return null;
-
-  try {
-    if (!getApps().length) {
-      appInstance = initializeApp(config);
-    } else {
-      appInstance = getApp();
-    }
-    dbInstance = getFirestore(appInstance);
-    return dbInstance;
-  } catch (err) {
-    console.error('Failed to initialize Firebase app or Firestore:', err);
-    return null;
+// Convert Firebase object map or array to array of items with ID
+function parseFirebaseList<T extends { id: string }>(raw: unknown): T[] {
+  if (!raw) return [];
+  if (Array.isArray(raw)) {
+    return raw.filter(Boolean) as T[];
   }
+  if (typeof raw === 'object') {
+    const list: T[] = [];
+    for (const [key, val] of Object.entries(raw as Record<string, T>)) {
+      if (val && typeof val === 'object') {
+        list.push({ ...val, id: val.id || key });
+      }
+    }
+    return list;
+  }
+  return [];
 }
 
 // ==========================================
-// FIRESTORE COLLECTIONS & DOCUMENT HELPERS
+// 1. PRODUCTS REALTIME SUBSCRIPTION & MUTATIONS
 // ==========================================
 
-const COLLECTIONS = {
-  PRODUCTS: 'products',
-  ORDERS: 'orders',
-  SETTINGS: 'settings',
-};
-
-// 1. PRODUCTS SUBSCRIPTION & MUTATIONS
 export function subscribeToProducts(
   onUpdate: (products: Product[]) => void,
   onError?: (error: Error) => void
-): Unsubscribe | null {
-  const db = getFirebaseDb();
-  if (!db) return null;
+): () => void {
+  const dbUrl = getDatabaseUrl();
+  let isClosed = false;
 
-  try {
-    const productsRef = collection(db, COLLECTIONS.PRODUCTS);
-    return onSnapshot(
-      productsRef,
-      (snapshot) => {
-        const list: Product[] = [];
-        snapshot.forEach((docSnap) => {
-          list.push({ id: docSnap.id, ...(docSnap.data() as Omit<Product, 'id'>) });
-        });
+  // 1. Immediate initial fetch
+  fetch(`${dbUrl}/products.json`)
+    .then((res) => res.json())
+    .then((data) => {
+      if (!isClosed && data) {
+        const list = parseFirebaseList<Product>(data);
         if (list.length > 0) {
           onUpdate(list);
         }
-      },
-      (err) => {
-        console.error('Firestore products subscription error:', err);
-        if (onError) onError(err);
       }
-    );
+    })
+    .catch((err) => {
+      console.warn('Initial products fetch error:', err);
+      if (onError) onError(err);
+    });
+
+  // 2. Real-time stream using Server-Sent Events (SSE)
+  let eventSource: EventSource | null = null;
+  try {
+    eventSource = new EventSource(`${dbUrl}/products.json`);
+
+    eventSource.addEventListener('put', () => {
+      try {
+        fetch(`${dbUrl}/products.json`)
+          .then((r) => r.json())
+          .then((data) => {
+            if (!isClosed && data) {
+              const list = parseFirebaseList<Product>(data);
+              if (list.length > 0) onUpdate(list);
+            }
+          });
+      } catch (err) {
+        console.warn('SSE put handler notice', err);
+      }
+    });
+
+    eventSource.addEventListener('patch', () => {
+      try {
+        fetch(`${dbUrl}/products.json`)
+          .then((r) => r.json())
+          .then((data) => {
+            if (!isClosed && data) {
+              const list = parseFirebaseList<Product>(data);
+              if (list.length > 0) onUpdate(list);
+            }
+          });
+      } catch (err) {
+        console.warn('SSE patch handler notice', err);
+      }
+    });
+
+    eventSource.onerror = (err) => {
+      // EventSource reconnects automatically on temporary drops
+      console.warn('Products live stream reconnection notice', err);
+    };
   } catch (err) {
-    console.error('Failed to subscribe to products:', err);
-    return null;
+    console.warn('SSE not supported or failed to initialize:', err);
   }
+
+  return () => {
+    isClosed = true;
+    if (eventSource) {
+      eventSource.close();
+    }
+  };
 }
 
 export async function saveProductToDb(product: Product): Promise<void> {
-  const db = getFirebaseDb();
-  if (!db) throw new Error('Firebase is not configured');
-
-  const { id, ...data } = product;
-  const docRef = doc(db, COLLECTIONS.PRODUCTS, id);
-  await setDoc(docRef, data, { merge: true });
-}
-
-export async function deleteProductFromDb(productId: string): Promise<void> {
-  const db = getFirebaseDb();
-  if (!db) throw new Error('Firebase is not configured');
-
-  const docRef = doc(db, COLLECTIONS.PRODUCTS, productId);
-  await deleteDoc(docRef);
-}
-
-// 2. ORDERS SUBSCRIPTION & MUTATIONS
-export function subscribeToOrders(
-  onUpdate: (orders: Order[]) => void,
-  onError?: (error: Error) => void
-): Unsubscribe | null {
-  const db = getFirebaseDb();
-  if (!db) return null;
-
-  try {
-    const ordersRef = collection(db, COLLECTIONS.ORDERS);
-    const q = query(ordersRef, orderBy('createdAt', 'desc'));
-    return onSnapshot(
-      q,
-      (snapshot) => {
-        const list: Order[] = [];
-        snapshot.forEach((docSnap) => {
-          list.push({ id: docSnap.id, ...(docSnap.data() as Omit<Order, 'id'>) });
-        });
-        onUpdate(list);
-      },
-      (err) => {
-        console.error('Firestore orders subscription error:', err);
-        if (onError) onError(err);
-      }
-    );
-  } catch (err) {
-    console.error('Failed to subscribe to orders:', err);
-    return null;
+  const dbUrl = getDatabaseUrl();
+  const res = await fetch(`${dbUrl}/products/${product.id}.json`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(product),
+  });
+  if (!res.ok) {
+    throw new Error(`Failed to save product to Firebase: ${res.statusText}`);
   }
 }
 
-export async function createOrderInDb(order: Order): Promise<void> {
-  const db = getFirebaseDb();
-  if (!db) throw new Error('Firebase is not configured');
+export async function deleteProductFromDb(productId: string): Promise<void> {
+  const dbUrl = getDatabaseUrl();
+  const res = await fetch(`${dbUrl}/products/${productId}.json`, {
+    method: 'DELETE',
+  });
+  if (!res.ok) {
+    throw new Error(`Failed to delete product from Firebase: ${res.statusText}`);
+  }
+}
 
-  const { id, ...data } = order;
-  const docRef = doc(db, COLLECTIONS.ORDERS, id);
-  await setDoc(docRef, data);
+// ==========================================
+// 2. ORDERS REALTIME SUBSCRIPTION & MUTATIONS
+// ==========================================
+
+export function subscribeToOrders(
+  onUpdate: (orders: Order[]) => void,
+  onError?: (error: Error) => void
+): () => void {
+  const dbUrl = getDatabaseUrl();
+  let isClosed = false;
+
+  const fetchOrders = () => {
+    fetch(`${dbUrl}/orders.json`)
+      .then((res) => res.json())
+      .then((data) => {
+        if (!isClosed && data) {
+          const list = parseFirebaseList<Order>(data);
+          // Sort by createdAt descending
+          list.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+          onUpdate(list);
+        }
+      })
+      .catch((err) => {
+        console.warn('Orders fetch error:', err);
+        if (onError) onError(err);
+      });
+  };
+
+  fetchOrders();
+
+  let eventSource: EventSource | null = null;
+  try {
+    eventSource = new EventSource(`${dbUrl}/orders.json`);
+    eventSource.addEventListener('put', fetchOrders);
+    eventSource.addEventListener('patch', fetchOrders);
+  } catch (err) {
+    console.warn('Orders SSE stream notice:', err);
+  }
+
+  return () => {
+    isClosed = true;
+    if (eventSource) eventSource.close();
+  };
+}
+
+export async function createOrderInDb(order: Order): Promise<void> {
+  const dbUrl = getDatabaseUrl();
+  const res = await fetch(`${dbUrl}/orders/${order.id}.json`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(order),
+  });
+  if (!res.ok) {
+    throw new Error(`Failed to save order to Firebase: ${res.statusText}`);
+  }
 }
 
 export async function updateOrderStatusInDb(
@@ -199,10 +208,7 @@ export async function updateOrderStatusInDb(
   status: OrderStatus,
   trackingNumber?: string
 ): Promise<void> {
-  const db = getFirebaseDb();
-  if (!db) throw new Error('Firebase is not configured');
-
-  const docRef = doc(db, COLLECTIONS.ORDERS, orderId);
+  const dbUrl = getDatabaseUrl();
   const payload: Record<string, unknown> = {
     status,
     updatedAt: new Date().toISOString(),
@@ -210,79 +216,127 @@ export async function updateOrderStatusInDb(
   if (trackingNumber) {
     payload.trackingNumber = trackingNumber;
   }
-  await updateDoc(docRef, payload);
-}
-
-export async function deleteOrderFromDb(orderId: string): Promise<void> {
-  const db = getFirebaseDb();
-  if (!db) throw new Error('Firebase is not configured');
-
-  const docRef = doc(db, COLLECTIONS.ORDERS, orderId);
-  await deleteDoc(docRef);
-}
-
-// 3. STORE SETTINGS SUBSCRIPTION & MUTATIONS
-export function subscribeToSettings(
-  onUpdate: (settings: StoreSettings) => void,
-  onError?: (error: Error) => void
-): Unsubscribe | null {
-  const db = getFirebaseDb();
-  if (!db) return null;
-
-  try {
-    const docRef = doc(db, COLLECTIONS.SETTINGS, 'general');
-    return onSnapshot(
-      docRef,
-      (snapshot) => {
-        if (snapshot.exists()) {
-          onUpdate(snapshot.data() as StoreSettings);
-        }
-      },
-      (err) => {
-        console.error('Firestore settings subscription error:', err);
-        if (onError) onError(err);
-      }
-    );
-  } catch (err) {
-    console.error('Failed to subscribe to settings:', err);
-    return null;
+  const res = await fetch(`${dbUrl}/orders/${orderId}.json`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  });
+  if (!res.ok) {
+    throw new Error(`Failed to update order in Firebase: ${res.statusText}`);
   }
 }
 
-export async function saveSettingsToDb(settings: StoreSettings): Promise<void> {
-  const db = getFirebaseDb();
-  if (!db) throw new Error('Firebase is not configured');
-
-  const docRef = doc(db, COLLECTIONS.SETTINGS, 'general');
-  await setDoc(docRef, settings, { merge: true });
+export async function deleteOrderFromDb(orderId: string): Promise<void> {
+  const dbUrl = getDatabaseUrl();
+  const res = await fetch(`${dbUrl}/orders/${orderId}.json`, {
+    method: 'DELETE',
+  });
+  if (!res.ok) {
+    throw new Error(`Failed to delete order from Firebase: ${res.statusText}`);
+  }
 }
 
-// 4. SEED DEMO DATA TO FIREBASE (ONE-CLICK POPULATE)
+// ==========================================
+// 3. SETTINGS REALTIME SUBSCRIPTION & MUTATIONS
+// ==========================================
+
+export function subscribeToSettings(
+  onUpdate: (settings: StoreSettings) => void,
+  onError?: (error: Error) => void
+): () => void {
+  const dbUrl = getDatabaseUrl();
+  let isClosed = false;
+
+  const fetchSettings = () => {
+    fetch(`${dbUrl}/settings.json`)
+      .then((res) => res.json())
+      .then((data) => {
+        if (!isClosed && data && typeof data === 'object') {
+          onUpdate(data as StoreSettings);
+        }
+      })
+      .catch((err) => {
+        console.warn('Settings fetch error:', err);
+        if (onError) onError(err);
+      });
+  };
+
+  fetchSettings();
+
+  let eventSource: EventSource | null = null;
+  try {
+    eventSource = new EventSource(`${dbUrl}/settings.json`);
+    eventSource.addEventListener('put', fetchSettings);
+    eventSource.addEventListener('patch', fetchSettings);
+  } catch (err) {
+    console.warn('Settings SSE stream notice:', err);
+  }
+
+  return () => {
+    isClosed = true;
+    if (eventSource) eventSource.close();
+  };
+}
+
+export async function saveSettingsToDb(settings: StoreSettings): Promise<void> {
+  const dbUrl = getDatabaseUrl();
+  const res = await fetch(`${dbUrl}/settings.json`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(settings),
+  });
+  if (!res.ok) {
+    throw new Error(`Failed to save settings to Firebase: ${res.statusText}`);
+  }
+}
+
+// ==========================================
+// 4. SEED INITIAL PRODUCTS TO FIREBASE (1-CLICK)
+// ==========================================
+
 export async function seedInitialDataToFirebase(
   products: Product[],
   settings: StoreSettings,
   orders?: Order[]
 ): Promise<{ productsUploaded: number; ordersUploaded: number }> {
-  const db = getFirebaseDb();
-  if (!db) throw new Error('Firebase is not configured. Please check your credentials.');
+  const dbUrl = getDatabaseUrl();
 
-  let productsUploaded = 0;
-  for (const prod of products) {
-    const { id, ...data } = prod;
-    await setDoc(doc(db, COLLECTIONS.PRODUCTS, id), data, { merge: true });
-    productsUploaded++;
+  // Convert array to dictionary with id keys for clean Firebase structure
+  const productsMap: Record<string, Product> = {};
+  for (const p of products) {
+    productsMap[p.id] = p;
   }
 
-  await setDoc(doc(db, COLLECTIONS.SETTINGS, 'general'), settings, { merge: true });
+  // Upload products
+  const pRes = await fetch(`${dbUrl}/products.json`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(productsMap),
+  });
+  if (!pRes.ok) throw new Error('Failed to seed products to Firebase');
 
+  // Upload settings
+  const sRes = await fetch(`${dbUrl}/settings.json`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(settings),
+  });
+  if (!sRes.ok) throw new Error('Failed to seed settings to Firebase');
+
+  // Upload initial orders
   let ordersUploaded = 0;
   if (orders && orders.length > 0) {
-    for (const ord of orders) {
-      const { id, ...data } = ord;
-      await setDoc(doc(db, COLLECTIONS.ORDERS, id), data, { merge: true });
+    const ordersMap: Record<string, Order> = {};
+    for (const o of orders) {
+      ordersMap[o.id] = o;
       ordersUploaded++;
     }
+    await fetch(`${dbUrl}/orders.json`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(ordersMap),
+    });
   }
 
-  return { productsUploaded, ordersUploaded };
+  return { productsUploaded: products.length, ordersUploaded };
 }

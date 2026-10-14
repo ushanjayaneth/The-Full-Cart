@@ -193,10 +193,24 @@ export const Footer: React.FC = () => {
           <div>
             © {new Date().getFullYear()} {settings.storeName}. All rights reserved. Designed for Mobile, Tablet & Desktop.
           </div>
-          <div style={{ display: 'flex', gap: '16px' }}>
+          <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
             <span>Privacy Policy</span>
             <span>Terms of Service</span>
             <span>Security</span>
+            <a
+              href="/admin"
+              style={{
+                color: 'var(--text-dim)',
+                opacity: 0.7,
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '4px',
+                fontSize: '0.74rem',
+              }}
+              title="Staff & Management Portal"
+            >
+              🔒 Staff Portal
+            </a>
           </div>
         </div>
 
