@@ -2,7 +2,8 @@
   "rules": {
     "products": {
       ".read": true,
-      ".write": true
+      ".write": true,
+      ".indexOn": ["category", "price", "stock"]
     },
     "settings": {
       ".read": true,
@@ -10,9 +11,10 @@
     },
     "orders": {
       ".read": true,
+      ".indexOn": ["orderNumber", "customer/phone", "createdAt"],
       "$orderId": {
         ".write": true,
-        ".validate": "newData.hasChildren(['id', 'orderNumber', 'customer', 'items', 'total'])"
+        ".validate": "newData.hasChildren(['id', 'orderNumber', 'customer', 'items', 'total', 'status']) && newData.child('total').isNumber() && newData.child('orderNumber').isString()"
       }
     }
   }
