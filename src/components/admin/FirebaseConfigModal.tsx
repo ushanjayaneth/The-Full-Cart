@@ -156,7 +156,7 @@ export const FirebaseConfigModal: React.FC<FirebaseConfigModalProps> = ({
             </div>
           )}
 
-          <div style={{
+          <div className="firebase-modal-actions" style={{
             display: 'flex',
             justifyContent: 'space-between',
             alignItems: 'center',

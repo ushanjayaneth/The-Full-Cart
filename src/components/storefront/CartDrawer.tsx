@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useStore } from '../../context/StoreContext';
-import { X, Trash2, Plus, Minus, ArrowRight, MessageCircle, Tag, CheckCircle2, AlertCircle } from 'lucide-react';
+import { X, Trash2, Plus, Minus, ArrowRight, Tag, CheckCircle2, AlertCircle } from 'lucide-react';
 
 export const CartDrawer: React.FC = () => {
   const {
@@ -18,6 +18,7 @@ export const CartDrawer: React.FC = () => {
     removePromoCode,
     settings,
     setCheckoutOpen,
+    setCheckoutSourceProductId,
   } = useStore();
 
   const [couponInput, setCouponInput] = useState<string>('');
@@ -42,25 +43,14 @@ export const CartDrawer: React.FC = () => {
 
   const handleProceedCheckout = () => {
     setCartOpen(false);
+    setCheckoutSourceProductId(null);
     setCheckoutOpen(true);
   };
 
-  const handleWhatsAppCartOrder = () => {
-    if (cart.length === 0) return;
-    const itemsList = cart
-      .map(
-        (i, idx) =>
-          `${idx + 1}. *${i.product.name}* x ${i.quantity} = ${settings.currencySymbol} ${(i.product.price * i.quantity).toLocaleString()}`
-      )
-      .join('\n');
 
-    const message = encodeURIComponent(
-      `Hello ${settings.storeName}! I want to place this order directly via WhatsApp:\n\n*Items in Cart:*\n${itemsList}\n\n*Subtotal:* ${settings.currencySymbol} ${cartSubtotal.toLocaleString()}\n*Delivery Fee:* ${settings.currencySymbol} ${deliveryFee.toLocaleString()}\n${promoDiscount > 0 ? `*Promo Discount:* -${settings.currencySymbol} ${promoDiscount.toLocaleString()}\n` : ''}*Total Amount:* ${settings.currencySymbol} ${cartTotal.toLocaleString()}\n\nPlease confirm availability and let me know the delivery details for Cash on Delivery.`
-    );
-    window.open(`https://wa.me/${settings.whatsappNumber}?text=${message}`, '_blank');
-  };
-
-  const freeDeliveryProgress = Math.min(100, (cartSubtotal / settings.freeDeliveryThreshold) * 100);
+  const freeDeliveryProgress = settings.freeDeliveryThreshold > 0
+    ? Math.min(100, (cartSubtotal / settings.freeDeliveryThreshold) * 100)
+    : 0;
   const remainingForFreeDelivery = Math.max(0, settings.freeDeliveryThreshold - cartSubtotal);
 
   return (
@@ -292,15 +282,6 @@ export const CartDrawer: React.FC = () => {
               <button className="btn-primary" onClick={handleProceedCheckout} style={{ justifyContent: 'center' }}>
                 <span>Proceed to Checkout</span>
                 <ArrowRight size={18} />
-              </button>
-
-              <button
-                className="btn-whatsapp-hero"
-                onClick={handleWhatsAppCartOrder}
-                style={{ justifyContent: 'center' }}
-              >
-                <MessageCircle size={18} />
-                <span>1-Click Order via WhatsApp</span>
               </button>
             </div>
           </div>

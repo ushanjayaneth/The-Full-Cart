@@ -528,7 +528,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
           </div>
 
           {/* Quick Firebase Action Card */}
-          <div style={{
+          <div className="admin-quick-sync-card" style={{
             background: 'linear-gradient(135deg, rgba(99, 102, 241, 0.1) 0%, rgba(245, 158, 11, 0.08) 100%)',
             border: '1px solid var(--border-subtle)',
             borderRadius: 'var(--radius-xl)',
@@ -562,7 +562,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
               </div>
             </div>
 
-            <div style={{ display: 'flex', gap: '10px' }}>
+            <div className="admin-quick-sync-actions" style={{ display: 'flex', gap: '10px' }}>
               {isFirebaseConnected && (
                 <button
                   className="btn-secondary"
@@ -587,7 +587,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
 
           {/* Recent Orders Overview */}
           <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border-subtle)', borderRadius: 'var(--radius-xl)', padding: '24px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '18px' }}>
+            <div className="admin-section-heading" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '18px' }}>
               <div>
                 <h3 style={{ fontSize: '1.15rem', fontWeight: 800 }}>Recent Customer Orders</h3>
                 <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>Latest orders placed on your store</p>
@@ -602,7 +602,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
             </div>
 
             <div className="table-responsive">
-              <table className="admin-table">
+              <table className="admin-table admin-recent-orders-table">
                 <thead>
                   <tr>
                     <th>Order #</th>
@@ -714,7 +714,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
 
           {/* Orders Table */}
           <div className="table-responsive">
-            <table className="admin-table">
+            <table className="admin-table admin-orders-table">
               <thead>
                 <tr>
                   <th>Order Details</th>
@@ -866,7 +866,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
       {activeAdminTab === 'inventory' && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
           
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div className="admin-inventory-heading" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <div>
               <h3 style={{ fontSize: '1.25rem', fontWeight: 800 }}>Product Catalog & Inventory</h3>
               <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
@@ -880,7 +880,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
           </div>
 
           {/* Product Filter Toolbar */}
-          <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', alignItems: 'center' }}>
+          <div className="admin-inventory-toolbar" style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', alignItems: 'center' }}>
             <div style={{ position: 'relative', flex: 1, minWidth: '240px' }}>
               <Search size={17} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-dim)' }} />
               <input
@@ -909,7 +909,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
 
           {/* Products List Table */}
           <div className="table-responsive">
-            <table className="admin-table">
+            <table className="admin-table admin-products-table">
               <thead>
                 <tr>
                   <th>Product</th>
@@ -1367,7 +1367,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
 
       {/* TAB 4: STORE SETTINGS */}
       {activeAdminTab === 'settings' && (
-        <div style={{
+        <div className="admin-settings-card" style={{
           background: 'var(--bg-card)',
           borderRadius: 'var(--radius-xl)',
           border: '1px solid var(--border-subtle)',
@@ -1403,7 +1403,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
                   placeholder="94771234567"
                 />
                 <span style={{ fontSize: '0.72rem', color: 'var(--text-dim)' }}>
-                  All 1-Click WhatsApp orders will be directed to this number.
+                  Confirmed order details and product links will be sent to this number.
                 </span>
               </div>
 
@@ -1477,8 +1477,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
 
             </div>
 
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingTop: '16px', borderTop: '1px solid var(--border-subtle)', flexWrap: 'wrap', gap: '10px' }}>
-              <div style={{ display: 'flex', gap: '8px' }}>
+            <div className="admin-settings-actions" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingTop: '16px', borderTop: '1px solid var(--border-subtle)', flexWrap: 'wrap', gap: '10px' }}>
+              <div className="admin-settings-action-group" style={{ display: 'flex', gap: '8px' }}>
                 <button
                   type="button"
                   onClick={() => setIsFirebaseModalOpen(true)}
@@ -1533,7 +1533,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
               Change the password required to access this Admin Management Portal.
             </p>
 
-            <form onSubmit={handleChangeAdminPassword} style={{ display: 'flex', gap: '10px', alignItems: 'center', maxWidth: '480px' }}>
+            <form className="admin-password-form" onSubmit={handleChangeAdminPassword} style={{ display: 'flex', gap: '10px', alignItems: 'center', maxWidth: '480px' }}>
               <input
                 type="text"
                 required
@@ -1569,7 +1569,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
               Clear all orders from your live Firebase database so you can start clean for real customers.
             </p>
 
-            <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+            <div className="admin-clear-orders-row" style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
               <button
                 type="button"
                 onClick={handleClearAllOrders}

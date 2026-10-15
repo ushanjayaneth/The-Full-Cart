@@ -25,6 +25,7 @@ interface StoreContextType {
   searchQuery: string;
   cartOpen: boolean;
   checkoutOpen: boolean;
+  checkoutSourceProductId: string | null;
   trackOrderOpen: boolean;
   adminView: boolean;
   activeAdminTab: 'overview' | 'orders' | 'inventory' | 'settings';
@@ -47,6 +48,7 @@ interface StoreContextType {
   setSearchQuery: (q: string) => void;
   setCartOpen: (open: boolean) => void;
   setCheckoutOpen: (open: boolean) => void;
+  setCheckoutSourceProductId: (productId: string | null) => void;
   setTrackOrderOpen: (open: boolean) => void;
   setAdminView: (view: boolean) => void;
   setActiveAdminTab: (tab: 'overview' | 'orders' | 'inventory' | 'settings') => void;
@@ -60,7 +62,7 @@ interface StoreContextType {
   applyPromoCode: (code: string) => { success: boolean; message: string };
   removePromoCode: () => void;
 
-  placeOrder: (customer: CustomerInfo, paymentMethod: PaymentMethod) => Promise<Order>;
+  placeOrder: (customer: CustomerInfo, paymentMethod: PaymentMethod, checkoutProductId?: string | null) => Promise<Order>;
   updateOrderStatus: (orderId: string, status: OrderStatus, notes?: string) => Promise<void>;
   deleteOrder: (orderId: string) => Promise<void>;
 
@@ -142,6 +144,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [cartOpen, setCartOpen] = useState<boolean>(false);
   const [checkoutOpen, setCheckoutOpen] = useState<boolean>(false);
+  const [checkoutSourceProductId, setCheckoutSourceProductId] = useState<string | null>(null);
   const [trackOrderOpen, setTrackOrderOpen] = useState<boolean>(false);
   const [adminView, setAdminView] = useState<boolean>(false);
   const [activeAdminTab, setActiveAdminTab] = useState<'overview' | 'orders' | 'inventory' | 'settings'>('overview');
@@ -257,15 +260,21 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   // Cart operations
   const addToCart = (product: Product, quantity = 1) => {
     setCart((prev) => {
-      const existing = prev.find((item) => item.product.id === product.id);
+      const currentProduct = products.find((item) => item.id === product.id) || product;
+      const existing = prev.find((item) => item.product.id === currentProduct.id);
+      const availableQuantity = Math.max(0, currentProduct.stock - (existing?.quantity || 0));
+      const quantityToAdd = Math.min(Math.max(0, quantity), availableQuantity);
+
+      if (quantityToAdd === 0) return prev;
+
       if (existing) {
         return prev.map((item) =>
-          item.product.id === product.id
-            ? { ...item, quantity: item.quantity + quantity }
+          item.product.id === currentProduct.id
+            ? { ...item, product: currentProduct, quantity: item.quantity + quantityToAdd }
             : item
         );
       }
-      return [...prev, { product, quantity }];
+      return [...prev, { product: currentProduct, quantity: quantityToAdd }];
     });
   };
 
@@ -279,9 +288,16 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       return;
     }
     setCart((prev) =>
-      prev.map((item) =>
-        item.product.id === productId ? { ...item, quantity } : item
-      )
+      prev.flatMap((item) => {
+        if (item.product.id !== productId) return [item];
+
+        const currentProduct = products.find((product) => product.id === productId) || item.product;
+        const limitedQuantity = Math.min(quantity, Math.max(0, currentProduct.stock));
+
+        return limitedQuantity > 0
+          ? [{ ...item, product: currentProduct, quantity: limitedQuantity }]
+          : [];
+      })
     );
   };
 
@@ -304,16 +320,38 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   };
 
   // Place Order (With Firebase Cloud sync)
-  const placeOrder = async (customer: CustomerInfo, paymentMethod: PaymentMethod): Promise<Order> => {
+  const placeOrder = async (
+    customer: CustomerInfo,
+    paymentMethod: PaymentMethod,
+    checkoutProductId: string | null = checkoutSourceProductId,
+  ): Promise<Order> => {
+    if (cart.length === 0) {
+      throw new Error('Your cart is empty. Add a product before confirming the order.');
+    }
+
+    const unavailableItem = cart.find((item) => {
+      const currentProduct = products.find((product) => product.id === item.product.id);
+      return !currentProduct || currentProduct.stock < item.quantity;
+    });
+
+    if (unavailableItem) {
+      throw new Error(`${unavailableItem.product.name} no longer has enough stock. Please update your cart and try again.`);
+    }
+
     const randNum = Math.floor(1000 + Math.random() * 9000);
     const orderNumber = `TFC-${randNum}`;
     const trackingNumber = `DOM-${Math.floor(100000 + Math.random() * 900000)}-LK`;
+    const orderedItems = cart.map((item) => ({ ...item, product: { ...item.product } }));
+    const sourceProductId = checkoutProductId && cart.some((item) => item.product.id === checkoutProductId)
+      ? checkoutProductId
+      : undefined;
 
     const newOrder: Order = {
       id: `ord-${Date.now()}`,
       orderNumber,
+      checkoutProductId: sourceProductId,
       customer,
-      items: [...cart],
+      items: orderedItems,
       subtotal: cartSubtotal,
       deliveryFee,
       discount: promoDiscount,
@@ -326,7 +364,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       notes: customer.notes || 'Order received through online storefront.',
     };
 
-    // 1. Deduct stock locally
+    // 1. Deduct stock locally.
     const updatedProducts = products.map((prod) => {
       const itemInCart = cart.find((c) => c.product.id === prod.id);
       if (itemInCart) {
@@ -339,9 +377,13 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     });
     setProducts(updatedProducts);
 
-    // 2. Save order locally
+    // 2. Save the confirmed order and clear the cart immediately. Cloud sync below
+    // must never leave a successfully placed local order sitting in the cart.
     setOrders((prev) => [newOrder, ...prev]);
     setLastPlacedOrder(newOrder);
+    clearCart();
+    setCheckoutOpen(false);
+    setCheckoutSourceProductId(null);
 
     // 3. Sync to Firebase Cloud if connected
     if (isFirebaseConfigured()) {
@@ -369,9 +411,6 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     } catch (e) {
       console.log(e);
     }
-
-    clearCart();
-    setCheckoutOpen(false);
 
     return newOrder;
   };
@@ -493,7 +532,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         o.orderNumber.toLowerCase() === q ||
         o.trackingNumber.toLowerCase() === q ||
         o.customer.phone.replace(/\D/g, '') === q.replace(/\D/g, '') ||
-        o.customer.whatsapp.replace(/\D/g, '') === q.replace(/\D/g, '')
+        o.customer.whatsapp?.replace(/\D/g, '') === q.replace(/\D/g, '')
     );
   };
 
@@ -508,6 +547,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         searchQuery,
         cartOpen,
         checkoutOpen,
+        checkoutSourceProductId,
         trackOrderOpen,
         adminView,
         activeAdminTab,
@@ -528,6 +568,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         setSearchQuery,
         setCartOpen,
         setCheckoutOpen,
+        setCheckoutSourceProductId,
         setTrackOrderOpen,
         setAdminView,
         setActiveAdminTab,

@@ -3,12 +3,7 @@ import { useStore } from '../../context/StoreContext';
 import { Sparkles, MessageCircle, ShoppingBag, ShieldCheck, Truck, Zap, Award, ThumbsUp } from 'lucide-react';
 
 export const HeroBanner: React.FC = () => {
-  const { settings, setTrackOrderOpen } = useStore();
-
-  const handleWhatsAppOrder = () => {
-    const text = encodeURIComponent(`Hi ${settings.storeName}! I would like to place an order or check the latest deals.`);
-    window.open(`https://wa.me/${settings.whatsappNumber}?text=${text}`, '_blank');
-  };
+  const { setTrackOrderOpen } = useStore();
 
   const scrollToCatalog = () => {
     const element = document.getElementById('product-catalog');
@@ -87,14 +82,6 @@ export const HeroBanner: React.FC = () => {
                 <ShoppingBag size={17} />
                 <span>Shop Now</span>
               </button>
-
-              <button
-                className="btn-whatsapp-hero"
-                onClick={handleWhatsAppOrder}
-              >
-                <MessageCircle size={17} />
-                <span>WhatsApp Order</span>
-              </button>
             </div>
           </div>
         </div>
@@ -119,7 +106,7 @@ export const HeroBanner: React.FC = () => {
 
             <p className="hero-subtitle">
               Browse top fashion, home essentials, groceries, health & beauty, and lifestyle essentials.
-              Enjoy <strong>1-Click WhatsApp orders</strong>, fast courier delivery to your doorstep, and <strong>live order tracking</strong>!
+              Confirm your order securely, then send its details and product link through WhatsApp for fast dispatch.
             </p>
 
             <div className="hero-action-buttons">
@@ -204,8 +191,8 @@ export const HeroBanner: React.FC = () => {
             <MessageCircle size={22} />
           </div>
           <div className="perk-info">
-            <h4>1-Click WhatsApp Order</h4>
-            <p>Send order details straight to our WhatsApp team</p>
+            <h4>Post-Order WhatsApp Confirmation</h4>
+            <p>Share your confirmed order and product link with our team</p>
           </div>
         </div>
 

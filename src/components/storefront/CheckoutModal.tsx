@@ -11,6 +11,17 @@ const SRI_LANKA_DISTRICTS = [
   'Monaragala', 'Ratnapura', 'Kegalle'
 ];
 
+const EMPTY_CUSTOMER_INFO: CustomerInfo = {
+  name: '',
+  phone: '',
+  whatsapp: '',
+  address: '',
+  city: '',
+  district: 'Colombo',
+  postalCode: '',
+  notes: '',
+};
+
 export const CheckoutModal: React.FC = () => {
   const {
     checkoutOpen,
@@ -22,24 +33,23 @@ export const CheckoutModal: React.FC = () => {
     cartTotal,
     settings,
     placeOrder,
+    checkoutSourceProductId,
+    setCheckoutSourceProductId,
   } = useStore();
 
-  const [formData, setFormData] = useState<CustomerInfo>({
-    name: '',
-    phone: '',
-    whatsapp: '',
-    address: '',
-    city: '',
-    district: 'Colombo',
-    postalCode: '',
-    notes: '',
-  });
+  const [formData, setFormData] = useState<CustomerInfo>(EMPTY_CUSTOMER_INFO);
 
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('cod');
   const [submitting, setSubmitting] = useState<boolean>(false);
   const [errorMessage, setErrorMessage] = useState<string>('');
 
   if (!checkoutOpen) return null;
+
+  const handleClose = () => {
+    if (submitting) return;
+    setCheckoutOpen(false);
+    setCheckoutSourceProductId(null);
+  };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -76,45 +86,28 @@ export const CheckoutModal: React.FC = () => {
 
     try {
       // Create the order in the system
-      const createdOrder = await placeOrder(
+      await placeOrder(
         {
           ...formData,
           whatsapp: formData.whatsapp || formData.phone,
         },
-        paymentMethod
+        paymentMethod,
+        checkoutSourceProductId,
       );
-
-      // If user selected WhatsApp payment method, also open WhatsApp with pre-filled message
-      if (paymentMethod === 'whatsapp') {
-        const itemsList = cart
-          .map((i, idx) => `${idx + 1}. *${i.product.name}* x ${i.quantity}`)
-          .join('\n');
-
-        const message = encodeURIComponent(
-          `*NEW ORDER - ${createdOrder.orderNumber}*\n\n` +
-          `*Customer:* ${formData.name}\n` +
-          `*Phone:* ${formData.phone}\n` +
-          `*Address:* ${formData.address}, ${formData.city}, ${formData.district}\n\n` +
-          `*Items:*\n${itemsList}\n\n` +
-          `*Total to Pay (COD):* ${settings.currencySymbol} ${cartTotal.toLocaleString()}\n` +
-          `*Tracking:* ${createdOrder.trackingNumber}\n\n` +
-          `Please confirm this order!`
-        );
-
-        window.open(`https://wa.me/${settings.whatsappNumber}?text=${message}`, '_blank');
-      }
+      setFormData(EMPTY_CUSTOMER_INFO);
+      setPaymentMethod('cod');
     } catch (err) {
       console.error(err);
-      setErrorMessage('Failed to place order. Please try again.');
+      setErrorMessage(err instanceof Error ? err.message : 'Failed to place order. Please try again.');
     } finally {
       setSubmitting(false);
     }
   };
 
   return (
-    <div className="modal-backdrop" onClick={() => setCheckoutOpen(false)}>
+    <div className="modal-backdrop" onClick={handleClose}>
       <div
-        className="modal-card"
+        className="modal-card checkout-modal-card"
         style={{ maxWidth: '680px' }}
         onClick={(e) => e.stopPropagation()}
       >
@@ -129,11 +122,12 @@ export const CheckoutModal: React.FC = () => {
           <div>
             <h3 style={{ fontSize: '1.25rem', fontWeight: 800 }}>Complete Your Order</h3>
             <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
-              Enter your delivery details for Cash on Delivery or WhatsApp order
+              Enter your delivery details, then confirm your order securely.
             </p>
           </div>
           <button
-            onClick={() => setCheckoutOpen(false)}
+            onClick={handleClose}
+            disabled={submitting}
             className="btn-close-drawer"
           >
             <X size={18} />
@@ -162,7 +156,7 @@ export const CheckoutModal: React.FC = () => {
               1. Delivery Information (ලැබිය යුතු ලිපිනය)
             </h4>
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
+            <div className="checkout-details-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
               <div className="form-group" style={{ gridColumn: '1 / -1' }}>
                 <label className="form-label">Full Name *</label>
                 <input
@@ -322,7 +316,7 @@ export const CheckoutModal: React.FC = () => {
                     <span>WhatsApp Order</span>
                   </div>
                   <div style={{ fontSize: '0.74rem', color: 'var(--text-muted)', marginTop: '2px' }}>
-                    Submit & send receipt directly to WhatsApp
+                    Confirm first; send the order and product link from the next screen
                   </div>
                 </div>
               </label>
@@ -385,16 +379,12 @@ export const CheckoutModal: React.FC = () => {
             <button
               type="submit"
               className="btn-primary"
-              disabled={submitting}
+              disabled={submitting || cart.length === 0}
               style={{ padding: '14px', fontSize: '1rem', justifyContent: 'center' }}
             >
               <ShieldCheck size={20} />
               <span>
-                {submitting
-                  ? 'Confirming Order...'
-                  : paymentMethod === 'whatsapp'
-                  ? 'Confirm & Open in WhatsApp'
-                  : 'Confirm Cash on Delivery Order'}
+                {submitting ? 'Confirming Order...' : 'Confirm Order'}
               </span>
             </button>
 

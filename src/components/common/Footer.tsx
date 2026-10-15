@@ -5,11 +5,6 @@ import { MessageCircle, Phone, Mail, MapPin, ShieldCheck, Truck, RefreshCw } fro
 export const Footer: React.FC = () => {
   const { settings, setTrackOrderOpen, setSelectedCategory } = useStore();
 
-  const openWhatsApp = () => {
-    const text = encodeURIComponent(`Hello ${settings.storeName}, I have an inquiry regarding your products.`);
-    window.open(`https://wa.me/${settings.whatsappNumber}?text=${text}`, '_blank');
-  };
-
   return (
     <footer style={{
       background: 'rgba(10, 14, 23, 0.95)',
@@ -79,8 +74,8 @@ export const Footer: React.FC = () => {
               <MessageCircle size={24} />
             </div>
             <div>
-              <h4 style={{ fontSize: '0.92rem', fontWeight: 700 }}>1-Click WhatsApp Order</h4>
-              <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>Order directly via WhatsApp anytime</p>
+              <h4 style={{ fontSize: '0.92rem', fontWeight: 700 }}>Order Confirmation</h4>
+              <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>Send your confirmed order and product link via WhatsApp</p>
             </div>
           </div>
 
@@ -123,14 +118,14 @@ export const Footer: React.FC = () => {
             <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', lineHeight: '1.6', marginBottom: '16px' }}>
               Shop Smarter, Live Better — More For Your Everyday Needs. Easy shopping on Mobile, Tablet & Laptop with islandwide Cash on Delivery.
             </p>
-            <button
-              onClick={openWhatsApp}
-              className="btn-whatsapp-hero"
+            <a
+              href={`tel:${settings.supportPhone.replace(/\s+/g, '')}`}
+              className="btn-secondary"
               style={{ padding: '8px 16px', fontSize: '0.85rem' }}
             >
-              <MessageCircle size={16} />
-              <span>WhatsApp Support</span>
-            </button>
+              <Phone size={16} />
+              <span>Call Support</span>
+            </a>
           </div>
 
           {/* Col 2: Categories */}
@@ -151,7 +146,7 @@ export const Footer: React.FC = () => {
             <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', fontSize: '0.86rem', color: 'var(--text-muted)' }}>
               <span style={{ cursor: 'pointer' }} onClick={() => setTrackOrderOpen(true)}>🚚 Live Order Tracking</span>
               <span>💵 Cash on Delivery Information</span>
-              <span>💬 Instant WhatsApp Orders</span>
+              <span>💬 Post-order WhatsApp confirmation</span>
               <span>🛡️ Warranty & Return Policy</span>
               <span>📦 Courier Delivery Partner Updates</span>
             </div>

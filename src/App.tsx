@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { StoreProvider, useStore } from './context/StoreContext';
 import { Header } from './components/common/Header';
 import { BottomNav } from './components/common/BottomNav';
@@ -15,18 +15,21 @@ import { PwaInstallBanner } from './components/common/PwaInstallBanner';
 
 const CustomerStorefrontLayout: React.FC = () => {
   const { products, setSelectedProductForModal } = useStore();
+  const handledProductLinkRef = useRef<string | null>(null);
 
   // Listen to ?product=<id> query parameter and auto-open matching product modal
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const targetProductId = params.get('product') || params.get('item') || params.get('id');
-    if (targetProductId && products.length > 0) {
+    if (targetProductId && products.length > 0 && handledProductLinkRef.current !== targetProductId) {
       const matched = products.find(
         (p) =>
           p.id === targetProductId ||
           p.sku.toLowerCase() === targetProductId.toLowerCase()
       );
       if (matched) {
+        // Stock updates after checkout must not reopen a product modal from a shared link.
+        handledProductLinkRef.current = targetProductId;
         setSelectedProductForModal(matched);
       }
     }

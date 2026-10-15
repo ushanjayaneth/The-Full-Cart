@@ -41,6 +41,8 @@ export type PaymentMethod = 'cod' | 'whatsapp' | 'card' | 'bank_transfer';
 export interface Order {
   id: string;
   orderNumber: string;
+  /** The product used to begin a direct product checkout, when applicable. */
+  checkoutProductId?: string;
   customer: CustomerInfo;
   items: CartItem[];
   subtotal: number;

@@ -4,14 +4,13 @@ import {
   X,
   Star,
   ShoppingBag,
-  MessageCircle,
   Truck,
   ShieldCheck,
   Check,
   Plus,
   Minus,
-  Share2,
   Copy,
+  ArrowRight,
 } from 'lucide-react';
 
 export const ProductModal: React.FC = () => {
@@ -19,8 +18,10 @@ export const ProductModal: React.FC = () => {
     selectedProductForModal,
     setSelectedProductForModal,
     settings,
+    cart,
     addToCart,
-    setCartOpen,
+    setCheckoutOpen,
+    setCheckoutSourceProductId,
   } = useStore();
 
   const [quantity, setQuantity] = useState<number>(1);
@@ -37,47 +38,39 @@ export const ProductModal: React.FC = () => {
   };
 
   const handleAddToCart = () => {
-    addToCart(product, quantity);
+    if (availableToAdd <= 0) return;
+
+    addToCart(product, Math.min(quantity, availableToAdd));
     setJustAdded(true);
     setTimeout(() => {
       setJustAdded(false);
     }, 2000);
   };
 
-  const handleBuyNow = () => {
-    addToCart(product, quantity);
+  const handleProceedToCheckout = () => {
+    if (availableToAdd <= 0) return;
+
+    setCheckoutSourceProductId(product.id);
+    addToCart(product, Math.min(quantity, availableToAdd));
     handleClose();
-    setCartOpen(true);
+    setCheckoutOpen(true);
   };
 
   const directProductUrl = `${window.location.origin}/?product=${product.id}`;
 
-  const handleWhatsAppOrder = () => {
-    const totalItemPrice = product.price * quantity;
-    const msg = encodeURIComponent(
-      `Hello ${settings.storeName}!\nI want to order / inquire about this item:\n\n` +
-      `*Product:* ${product.name} ${product.sinhalaName ? `(${product.sinhalaName})` : ''}\n` +
-      `*Quantity:* ${quantity} ${product.unit || 'unit'}\n` +
-      `*Price:* ${settings.currencySymbol} ${totalItemPrice.toLocaleString()}\n` +
-      `*SKU:* ${product.sku}\n` +
-      `*Product Link:* ${directProductUrl}\n\n` +
-      `Please confirm availability and arrange Cash on Delivery delivery.`
-    );
-    window.open(`https://wa.me/${settings.whatsappNumber}?text=${msg}`, '_blank');
-  };
-
-  const handleShareToWhatsApp = () => {
-    const shareText = encodeURIComponent(
-      `🛍️ Check out *${product.name}* on ${settings.storeName}!\n\n` +
-      `💰 Price: ${settings.currencySymbol} ${product.price.toLocaleString()}\n` +
-      `⭐ Rating: ${product.rating} / 5.0\n\n` +
-      `👉 Click here to view & order:\n${directProductUrl}`
-    );
-    window.open(`https://api.whatsapp.com/send?text=${shareText}`, '_blank');
-  };
-
-  const handleCopyLink = () => {
-    navigator.clipboard.writeText(directProductUrl);
+  const handleCopyLink = async () => {
+    try {
+      await navigator.clipboard.writeText(directProductUrl);
+    } catch {
+      const textArea = document.createElement('textarea');
+      textArea.value = directProductUrl;
+      textArea.style.position = 'fixed';
+      textArea.style.opacity = '0';
+      document.body.appendChild(textArea);
+      textArea.select();
+      document.execCommand('copy');
+      textArea.remove();
+    }
     setCopiedLink(true);
     setTimeout(() => setCopiedLink(false), 2000);
   };
@@ -85,11 +78,14 @@ export const ProductModal: React.FC = () => {
   const discountPercent = product.originalPrice
     ? Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100)
     : 0;
+  const existingCartQuantity = cart.find((item) => item.product.id === product.id)?.quantity || 0;
+  const availableToAdd = Math.max(0, product.stock - existingCartQuantity);
+  const displayedQuantity = availableToAdd > 0 ? Math.min(quantity, availableToAdd) : 0;
 
   return (
     <div className="modal-backdrop" onClick={handleClose}>
       <div
-        className="modal-card"
+        className="modal-card product-modal-card"
         style={{ maxWidth: '820px', maxHeight: '90vh', overflowY: 'auto' }}
         onClick={(e) => e.stopPropagation()}
       >
@@ -231,38 +227,47 @@ export const ProductModal: React.FC = () => {
             </p>
 
             {/* Quantity Selector */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+            <div className="product-modal-quantity" style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
               <span style={{ fontSize: '0.85rem', fontWeight: 700 }}>Quantity:</span>
               <div className="quantity-controls" style={{ margin: 0 }}>
                 <button
                   className="qty-btn"
                   onClick={() => setQuantity((q) => Math.max(1, q - 1))}
-                  disabled={quantity <= 1}
+                  disabled={availableToAdd <= 0 || displayedQuantity <= 1}
                 >
                   <Minus size={14} />
                 </button>
                 <span className="qty-num" style={{ minWidth: '32px', textAlign: 'center' }}>
-                  {quantity}
+                  {displayedQuantity}
                 </span>
                 <button
                   className="qty-btn"
-                  onClick={() => setQuantity((q) => Math.min(product.stock, q + 1))}
-                  disabled={quantity >= product.stock}
+                  onClick={() => setQuantity((q) => Math.min(availableToAdd, q + 1))}
+                  disabled={availableToAdd <= 0 || displayedQuantity >= availableToAdd}
                 >
                   <Plus size={14} />
                 </button>
               </div>
               <span style={{ fontSize: '0.78rem', color: 'var(--text-dim)' }}>
-                Subtotal: {settings.currencySymbol} {(product.price * quantity).toLocaleString()}
+                Subtotal: {settings.currencySymbol} {(product.price * displayedQuantity).toLocaleString()}
               </span>
             </div>
 
-            {/* Actions: Add to Cart & WhatsApp Order */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginTop: '6px' }}>
+            {availableToAdd <= 0 && (
+              <div style={{ fontSize: '0.78rem', color: '#fbbf24' }}>
+                {product.stock === 0
+                  ? 'This product is currently out of stock.'
+                  : 'All available units are already in your cart.'}
+              </div>
+            )}
+
+            {/* Actions: Add to Cart & Proceed to Checkout */}
+            <div className="product-modal-actions" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginTop: '6px' }}>
               <button
-                className="btn-primary"
+                className="btn-secondary"
                 onClick={handleAddToCart}
-                style={justAdded ? { background: '#10b981' } : {}}
+                disabled={availableToAdd <= 0}
+                style={justAdded ? { background: 'rgba(16, 185, 129, 0.2)', borderColor: '#10b981', color: '#34d399' } : {}}
               >
                 {justAdded ? (
                   <>
@@ -278,47 +283,26 @@ export const ProductModal: React.FC = () => {
               </button>
 
               <button
-                className="btn-whatsapp-hero"
-                onClick={handleWhatsAppOrder}
+                className="btn-primary"
+                onClick={handleProceedToCheckout}
+                disabled={availableToAdd <= 0}
+                style={{ justifyContent: 'center' }}
               >
-                <MessageCircle size={18} />
-                <span>WhatsApp Order</span>
+                <span>Proceed to Checkout</span>
+                <ArrowRight size={18} />
               </button>
             </div>
 
-            {/* Instant Checkout & Share Row */}
-            <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr', gap: '8px' }}>
-              <button
-                className="btn-secondary"
-                onClick={handleBuyNow}
-                style={{ justifyContent: 'center' }}
-              >
-                <span>Instant Checkout</span>
-              </button>
-
-              <button
-                className="btn-secondary"
-                onClick={handleShareToWhatsApp}
-                title="Share this product on WhatsApp"
-                style={{
-                  justifyContent: 'center',
-                  background: 'rgba(37, 211, 102, 0.12)',
-                  borderColor: 'rgba(37, 211, 102, 0.3)',
-                  color: '#4ade80',
-                }}
-              >
-                <Share2 size={15} />
-                <span>Share</span>
-              </button>
-
+            {/* WhatsApp order confirmation is deliberately shown only after checkout. */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '8px' }}>
               <button
                 className="btn-secondary"
                 onClick={handleCopyLink}
                 title="Copy Direct Product Link"
-                style={{ justifyContent: 'center' }}
+                style={{ justifyContent: 'center', width: '100%' }}
               >
                 {copiedLink ? <Check size={15} style={{ color: '#34d399' }} /> : <Copy size={15} />}
-                <span>{copiedLink ? 'Copied' : 'Link'}</span>
+                <span>{copiedLink ? 'Link Copied!' : 'Copy Direct Link'}</span>
               </button>
             </div>
 

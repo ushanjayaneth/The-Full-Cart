@@ -1,7 +1,7 @@
 import React from 'react';
 import type { Product } from '../../types';
 import { useStore } from '../../context/StoreContext';
-import { Star, ShoppingBag, Eye, MessageCircle, Check } from 'lucide-react';
+import { Star, ShoppingBag, Eye, Check } from 'lucide-react';
 
 interface ProductCardProps {
   product: Product;
@@ -31,15 +31,6 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
   const discountPercent = product.originalPrice
     ? Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100)
     : 0;
-
-  const handleDirectWhatsAppOrder = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    const productUrl = `${window.location.origin}/?product=${product.id}`;
-    const message = encodeURIComponent(
-      `Hello ${settings.storeName}! I want to order this product:\n\n*Product:* ${product.name} ${product.sinhalaName ? `(${product.sinhalaName})` : ''}\n*Price:* ${settings.currencySymbol} ${product.price.toLocaleString()}\n*SKU:* ${product.sku}\n*Link:* ${productUrl}\n\nPlease let me know how to proceed with Cash on Delivery.`
-    );
-    window.open(`https://wa.me/${settings.whatsappNumber}?text=${message}`, '_blank');
-  };
 
   const handleAddToCart = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -145,21 +136,25 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
         </div>
 
         {/* Actions Row */}
-        <div className="card-actions-row">
+        <div className="card-actions-row" style={{ gridTemplateColumns: '1fr' }}>
           <button
             className="btn-add-cart"
             onClick={handleAddToCart}
+            disabled={product.stock <= 0}
             style={
               isInCart
                 ? {
                     background: 'rgba(16, 185, 129, 0.2)',
                     borderColor: '#10b981',
                     color: '#34d399',
+                    width: '100%',
                   }
-                : {}
+                : { width: '100%' }
             }
           >
-            {isInCart ? (
+            {product.stock <= 0 ? (
+              <span>Out of Stock</span>
+            ) : isInCart ? (
               <>
                 <Check size={16} />
                 <span>Added ({cartItem?.quantity})</span>
@@ -170,14 +165,6 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
                 <span>Add to Cart</span>
               </>
             )}
-          </button>
-
-          <button
-            className="btn-whatsapp-direct"
-            onClick={handleDirectWhatsAppOrder}
-            title="Order / Inquire via WhatsApp"
-          >
-            <MessageCircle size={18} />
           </button>
         </div>
       </div>

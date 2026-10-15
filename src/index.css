@@ -102,6 +102,13 @@ button {
   transition: all var(--transition-normal);
 }
 
+button:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+  transform: none !important;
+  box-shadow: none !important;
+}
+
 /* Scrollbar */
 ::-webkit-scrollbar {
   width: 8px;
@@ -1621,5 +1628,239 @@ button {
   .metric-val {
     font-size: 1.35rem;
   }
+
+  /* Customer checkout and success screens */
+  .checkout-details-grid,
+  .product-modal-actions {
+    grid-template-columns: 1fr !important;
+  }
+
+  .product-modal-quantity {
+    flex-wrap: wrap;
+    gap: 10px !important;
+  }
+
+  .order-success-product-row {
+    align-items: flex-start !important;
+  }
+
+  /* Give the card-style admin tables their missing field labels on phones. */
+  .admin-table td:not([colspan])::before {
+    display: block;
+    margin-bottom: 3px;
+    color: var(--text-dim);
+    font-size: 0.68rem;
+    font-weight: 800;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+  }
+
+  .admin-table td[colspan] {
+    text-align: center !important;
+  }
+
+  .admin-table td[colspan]::before {
+    content: none !important;
+  }
+
+  .admin-recent-orders-table td:nth-child(1)::before { content: 'Order #'; }
+  .admin-recent-orders-table td:nth-child(2)::before { content: 'Customer'; }
+  .admin-recent-orders-table td:nth-child(3)::before { content: 'Date'; }
+  .admin-recent-orders-table td:nth-child(4)::before { content: 'Total'; }
+  .admin-recent-orders-table td:nth-child(5)::before { content: 'Status'; }
+  .admin-recent-orders-table td:nth-child(6)::before { content: 'Quick action'; }
+
+  .admin-orders-table td:nth-child(1)::before { content: 'Order details'; }
+  .admin-orders-table td:nth-child(2)::before { content: 'Customer & address'; }
+  .admin-orders-table td:nth-child(3)::before { content: 'Items ordered'; }
+  .admin-orders-table td:nth-child(4)::before { content: 'Amount'; }
+  .admin-orders-table td:nth-child(5)::before { content: 'Status'; }
+  .admin-orders-table td:nth-child(6)::before { content: 'Actions'; }
+
+  .admin-products-table td:nth-child(1)::before { content: 'Product'; }
+  .admin-products-table td:nth-child(2)::before { content: 'Category'; }
+  .admin-products-table td:nth-child(3)::before { content: 'Price'; }
+  .admin-products-table td:nth-child(4)::before { content: 'Stock available'; }
+  .admin-products-table td:nth-child(5)::before { content: 'Rating'; }
+  .admin-products-table td:nth-child(6)::before { content: 'Actions'; }
+
+  .admin-quick-sync-card {
+    align-items: stretch !important;
+    padding: 16px !important;
+  }
+
+  .admin-quick-sync-card > div:first-child {
+    align-items: flex-start !important;
+  }
+
+  .admin-quick-sync-actions,
+  .admin-settings-action-group,
+  .admin-clear-orders-row,
+  .firebase-modal-actions {
+    width: 100%;
+    flex-wrap: wrap !important;
+  }
+
+  .admin-quick-sync-actions button,
+  .admin-settings-action-group button,
+  .admin-clear-orders-row button {
+    flex: 1 1 180px;
+    justify-content: center;
+  }
+
+  .admin-inventory-heading,
+  .admin-section-heading {
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+
+  .admin-inventory-heading > button,
+  .admin-section-heading > button {
+    flex: 1 1 180px;
+  }
+
+  .admin-inventory-toolbar {
+    align-items: stretch !important;
+  }
+
+  .admin-inventory-toolbar > div:first-child,
+  .admin-inventory-toolbar select {
+    width: 100% !important;
+    min-width: 0 !important;
+    flex-basis: 100%;
+  }
+
+  .admin-settings-actions {
+    align-items: stretch !important;
+  }
+
+  .admin-settings-card {
+    padding: 20px 14px !important;
+  }
+
+  .admin-password-form {
+    max-width: none !important;
+    flex-wrap: wrap;
+  }
+
+  .admin-password-form input,
+  .admin-password-form button {
+    min-width: 0;
+  }
+
+  .firebase-modal-actions {
+    gap: 12px;
+  }
+
+  .firebase-modal-actions > div {
+    margin-left: auto;
+  }
+
+  .admin-invoice-modal {
+    max-height: calc(100dvh - 16px) !important;
+  }
+
+  .admin-invoice-controls {
+    padding: 12px 14px !important;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+
+  .admin-invoice-controls > div:first-child {
+    flex: 1 1 100%;
+  }
+
+  .admin-invoice-sheet {
+    padding: 22px 16px !important;
+    gap: 18px !important;
+  }
+
+  .admin-invoice-header,
+  .admin-invoice-footer {
+    flex-direction: column;
+    align-items: flex-start !important;
+    gap: 14px;
+  }
+
+  .admin-invoice-header > div:last-child {
+    text-align: left !important;
+  }
+
+  .admin-invoice-delivery-grid {
+    grid-template-columns: 1fr !important;
+    gap: 14px !important;
+  }
+
+  .admin-invoice-totals {
+    width: 100% !important;
+  }
 }
 
+@media (max-width: 480px) {
+  .admin-container {
+    padding: 12px 8px 80px;
+  }
+
+  .admin-header-actions {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .admin-header-actions button:last-child {
+    grid-column: 1 / -1;
+  }
+
+  .admin-quick-sync-actions button,
+  .admin-settings-action-group button,
+  .admin-clear-orders-row button,
+  .firebase-modal-actions > button,
+  .firebase-modal-actions > div {
+    flex: 1 1 100%;
+    width: 100%;
+    margin-left: 0;
+  }
+
+  .admin-password-form {
+    flex-direction: column;
+    align-items: stretch !important;
+  }
+
+  .admin-password-form button {
+    width: 100%;
+  }
+
+  .checkout-modal-card > div:first-child,
+  .checkout-modal-card form,
+  .order-success-modal > div {
+    padding-left: 16px !important;
+    padding-right: 16px !important;
+  }
+
+  .product-modal-card > div {
+    padding: 18px 16px !important;
+    gap: 18px !important;
+  }
+
+  .order-success-actions > div {
+    grid-template-columns: 1fr !important;
+  }
+
+  .admin-invoice-sheet {
+    padding: 18px 12px !important;
+  }
+
+  .admin-invoice-controls > div:last-child {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .admin-invoice-items-table {
+    table-layout: fixed;
+    font-size: 0.68rem !important;
+  }
+
+  .admin-invoice-items-table th,
+  .admin-invoice-items-table td {
+    padding: 6px 3px !important;
+    overflow-wrap: anywhere;
+  }
+}

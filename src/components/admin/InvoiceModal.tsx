@@ -20,13 +20,13 @@ export const InvoiceModal: React.FC<InvoiceModalProps> = ({ order, onClose }) =>
   return (
     <div className="modal-backdrop" onClick={onClose}>
       <div
-        className="modal-card printable-invoice"
+        className="modal-card printable-invoice admin-invoice-modal"
         style={{ maxWidth: '780px', background: '#ffffff', color: '#0f172a' }}
         onClick={(e) => e.stopPropagation()}
       >
         {/* Modal Controls Bar */}
         <div
-          className="no-print"
+          className="no-print admin-invoice-controls"
           style={{
             padding: '14px 24px',
             background: '#f8fafc',
@@ -72,10 +72,10 @@ export const InvoiceModal: React.FC<InvoiceModalProps> = ({ order, onClose }) =>
         </div>
 
         {/* Printable Sheet */}
-        <div style={{ padding: '36px 32px', display: 'flex', flexDirection: 'column', gap: '24px' }}>
+        <div className="admin-invoice-sheet" style={{ padding: '36px 32px', display: 'flex', flexDirection: 'column', gap: '24px' }}>
           
           {/* Header row */}
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', borderBottom: '2px solid #0f172a', paddingBottom: '20px' }}>
+          <div className="admin-invoice-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', borderBottom: '2px solid #0f172a', paddingBottom: '20px' }}>
             <div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '6px' }}>
                 <img
@@ -111,7 +111,7 @@ export const InvoiceModal: React.FC<InvoiceModalProps> = ({ order, onClose }) =>
           </div>
 
           {/* Customer & Delivery Box */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', padding: '16px', background: '#f8fafc', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
+          <div className="admin-invoice-delivery-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', padding: '16px', background: '#f8fafc', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
             <div>
               <div style={{ fontSize: '0.72rem', textTransform: 'uppercase', color: '#64748b', fontWeight: 700, marginBottom: '4px' }}>
                 Deliver To (Recipient)
@@ -147,7 +147,7 @@ export const InvoiceModal: React.FC<InvoiceModalProps> = ({ order, onClose }) =>
           </div>
 
           {/* Items Table */}
-          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.85rem' }}>
+          <table className="admin-invoice-items-table" style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.85rem' }}>
             <thead>
               <tr style={{ borderBottom: '2px solid #cbd5e1', textAlign: 'left' }}>
                 <th style={{ padding: '8px', color: '#475569' }}>#</th>
@@ -179,7 +179,7 @@ export const InvoiceModal: React.FC<InvoiceModalProps> = ({ order, onClose }) =>
 
           {/* Totals */}
           <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
-            <div style={{ width: '280px', display: 'flex', flexDirection: 'column', gap: '6px', fontSize: '0.85rem' }}>
+            <div className="admin-invoice-totals" style={{ width: '280px', display: 'flex', flexDirection: 'column', gap: '6px', fontSize: '0.85rem' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', color: '#64748b' }}>
                 <span>Subtotal:</span>
                 <span>{settings.currencySymbol} {order.subtotal.toLocaleString()}</span>
@@ -210,7 +210,7 @@ export const InvoiceModal: React.FC<InvoiceModalProps> = ({ order, onClose }) =>
           </div>
 
           {/* Footer & Barcode Simulation */}
-          <div style={{ borderTop: '1px dashed #cbd5e1', paddingTop: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div className="admin-invoice-footer" style={{ borderTop: '1px dashed #cbd5e1', paddingTop: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <div>
               <p style={{ fontSize: '0.74rem', color: '#64748b' }}>
                 Thank you for your order! For queries, contact {settings.supportPhone}.<br />
