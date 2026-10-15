@@ -356,8 +356,9 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
           </p>
         </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+        <div className="admin-header-actions">
           {/* Firebase Setup Button */}
+
           <button
             className="btn-secondary"
             onClick={() => setIsFirebaseModalOpen(true)}
@@ -672,9 +673,9 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
             borderRadius: 'var(--radius-lg)',
             border: '1px solid var(--border-subtle)',
           }}>
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', alignItems: 'center', justifyContent: 'space-between' }}>
+            <div className="admin-filter-row">
               {/* Status pills */}
-              <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+              <div className="admin-status-pills">
                 {['all', 'pending', 'processing', 'dispatched', 'delivered', 'cancelled'].map((st) => (
                   <button
                     key={st}
@@ -696,7 +697,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
               </div>
 
               {/* Order Search */}
-              <div style={{ position: 'relative', width: '280px' }}>
+              <div className="admin-search-wrapper">
                 <Search size={16} style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-dim)' }} />
                 <input
                   type="text"
@@ -708,6 +709,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
                 />
               </div>
             </div>
+
           </div>
 
           {/* Orders Table */}
@@ -1047,8 +1049,9 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
                   </h3>
                 </div>
 
-                <form onSubmit={handleSaveProduct} style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
+                <form onSubmit={handleSaveProduct} className="admin-modal-form">
+                  <div className="admin-form-grid">
+
                     
                     <div className="form-group" style={{ gridColumn: '1 / -1' }}>
                       <label className="form-label">Product Name (English) *</label>
@@ -1377,7 +1380,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
           </p>
 
           <form onSubmit={handleSaveSettings} style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+            <div className="admin-form-grid">
+
               
               <div className="form-group">
                 <label className="form-label">Store Brand Name</label>
